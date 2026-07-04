@@ -1,120 +1,123 @@
-# AirKeyboard 🚀
+# AirKeyboard
 
-An ultra-low latency, zero-configuration wireless keyboard & trackpad that turns your iOS device (or any mobile device) into a virtual input accessory for macOS. It works entirely over local Wi-Fi/WebSockets, requiring **zero app installations** on your mobile device and **zero USB ports** on your Mac!
+AirKeyboard turns an iPhone, iPad, or other mobile browser into a local Wi-Fi keyboard and trackpad for macOS. The phone opens a web controller, the Mac runs a small Node.js/WebSocket server, and a native Swift helper injects keyboard and mouse events through macOS CoreGraphics.
 
-Perfect for macOS users with occupied USB ports, headless Mac setups, or when your physical keyboard/mouse stops working.
-
----
+It is useful for headless Mac setups, quick remote input on the same network, or as an emergency keyboard/trackpad when a physical device is unavailable.
 
 ## Features
 
-- ⚡ **Ultra-Low Latency:** Uses WebSockets for persistent client-server communication (~1-2ms) and a persistent macOS native Swift daemon to perform instant keystroke and mouse event injection.
-- 📱 **Zero Mobile Installs:** Runs directly inside Safari or Chrome on your iOS/Android device.
-- 🔍 **Auto-Discovery via Bonjour/mDNS:** Accessible via a local hostname (e.g. `http://your-mac-name.local:3000`), meaning you don't need to look up or memorize your Mac's IP address!
-- 🖱️ **Remote Trackpad (Mouse Mode):** Slide your finger on the mobile screen to move the macOS mouse cursor. Supports:
-  - **Left Click:** Single-finger tap.
-  - **Right Click:** Two-finger tap.
-  - **Scroll:** Two-finger drag (supports natural scrolling).
-  - **Click Buttons:** Dedicated physical virtual buttons for Left/Right click.
-- 🔑 **Session Token Authentication (Trust Device):** Generates a new random 4-digit code in the terminal at *every startup* for maximum security. When entered once, the iOS device receives a secure token that is saved in `localStorage`. Subsequent connections pair automatically, bypass the code screen, and establish trust instantly, even across Mac restarts!
-- 🔌 **Auto Port Detection:** Automatically scans and binds to the next available port if port `3000` is currently occupied by another service.
-- ⌨️ **Special Keys & D-Pad:** Virtual buttons for `Esc`, `Tab`, `Delete`, `Space`, `Enter`, and Arrow keys (`▲` `▼` `◀` `▶`) for easy cursor navigation.
-
----
+- Browser-based mobile controller, with no iOS app install required.
+- Local WebSocket input path for low-latency keyboard and pointer events.
+- macOS native input injection through a persistent Swift helper process.
+- Trackpad gestures: move pointer, single-finger tap, two-finger right click, and two-finger scroll.
+- Dedicated buttons for Esc, Tab, Delete, Space, Enter, and arrow keys.
+- Bonjour/local hostname support, plus IP fallback.
+- Session pairing with a 4-digit startup code and trusted-device tokens.
+- Trusted tokens are stored as hashes on the Mac and ignored by Git.
+- Minimal macOS menu bar app that shows the pairing code, copies the mobile URL, and lists active devices.
+- Auto port fallback when port `3000` is already in use.
 
 ## Requirements
 
-- **macOS:** 10.15 (Catalina) or later.
-- **Node.js:** v16 or later.
-- **Swift Compiler (`swiftc`):** Usually comes pre-installed with macOS Command Line Tools.
----
-
-## macOS Native GUI App (Recommended)
-
-Instead of launching through a terminal window, you can run AirKeyboard as a native macOS GUI application! It comes with a custom glowing app icon, is fully self-contained, and features a sleek dark mode dashboard.
-
-### Features
-*   🟢 **Server Status:** Live green/red indicator showing if the server is active or offline.
-*   🔑 **Highly Visible Access Code:** The 4-digit code is displayed in a large, prominent font inside the window.
-*   🔗 **Clickable Hostnames:** Click the Bonjour host link directly inside the GUI to open Safari.
-*   🔌 **One-Click Toggle:** Click **START SERVER** or **STOP SERVER** to turn the server on/off natively.
-*   👥 **Active Devices Tracker:** Shows the name and IP of the connected iOS device in real-time.
-
-### Installation
-1.  Drag the compiled **[AirKeyboard.app](file:///Applications/AirKeyboard.app)** to your Mac's `/Applications` folder.
-2.  Open it from your **Launchpad** or **Spotlight Search**.
-3.  *(Optional)* Recompile the application bundle with a custom icon image of your choice:
-    ```bash
-    ./build-macos-app.sh <path_to_custom_image_png_or_jpg>
-    ```
-
----
+- macOS 10.15 or later.
+- Node.js 16 or later.
+- Swift compiler (`swiftc`), usually installed with Xcode Command Line Tools.
+- A mobile device on the same trusted local network.
 
 ## Quick Start
 
-1. **Clone or download** this repository to your Mac.
-2. In your Terminal, navigate to the project folder and run the startup script:
-   ```bash
-   ./start-airkeyboard.sh
-   ```
-   *(This script will automatically install Node dependencies, compile the Swift helper binary, and launch the server).*
-3. The Terminal will print your local IP address, your Bonjour hostname, the generated Access Code for this session, and instructions:
-   ```text
-   ==========================================
-   AirKeyboard Server is running (HTTP)!
-   Open browser on your iOS device and go to:
-   👉 http://192.168.1.15:3000
-   👉 http://Wildans-MacBook-Pro.local:3000
-   ------------------------------------------
-   Access Code for this session: 6590
-   ==========================================
-   ```
-4. Open the local hostname URL (e.g., `http://Wildans-MacBook-Pro.local:3000`) on your iOS device's browser.
-5. Enter the **Access Code** shown in your terminal once to trust your iOS device, and start typing/controlling your mouse!
-6. Next time you start the server, the code will be different, but your iOS device will connect automatically without prompting for the code again.
+Run AirKeyboard from the repository:
 
----
+```bash
+./start-airkeyboard.sh
+```
 
-## Important: macOS Accessibility Permissions
+The script installs the Node dependency if needed, compiles the Swift input helper if needed, and starts the local server. The terminal prints URLs and a pairing code:
 
-macOS restricts global keyboard and mouse simulation for security. The first time you press a key or move the mouse using AirKeyboard, your Mac will ask for **Accessibility permissions**.
+```text
+AirKeyboard Server is running (HTTP)!
+Open browser on your iOS device and go to:
+http://192.168.1.15:3000
+http://Your-Mac.local:3000
 
-To allow it:
-1. Open **System Settings** on your Mac.
-2. Go to **Privacy & Security** > **Accessibility**.
-3. Toggle the switch **ON** for **Terminal** (or whichever terminal app you are using, like iTerm, VSCode, or Node).
+Access Code for this session: 6590
+```
 
-If permissions are set up correctly, you should see `[Helper] READY` in the server logs.
+Open one of the URLs on your mobile device, enter the 4-digit code, then use the browser page as a keyboard and trackpad.
 
----
+## Menu Bar App
 
-## How It Works Under the Hood
+AirKeyboard can also be packaged as a native macOS menu bar app. The menu bar app starts the server automatically, shows the current access code, copies the mobile URL when clicked, and stops the server when the app quits.
+
+Build the `.app` bundle with a custom icon:
+
+```bash
+./build-macos-app.sh /path/to/icon.png
+```
+
+Then move the generated `AirKeyboard.app` into `/Applications` if desired. Generated bundles, binaries, session files, and trusted token files are intentionally ignored by Git.
+
+## macOS Accessibility Permission
+
+macOS requires Accessibility permission before an app can post global keyboard and mouse events.
+
+1. Open System Settings.
+2. Go to Privacy & Security > Accessibility.
+3. Enable the terminal app or `AirKeyboard.app`, depending on how you launch AirKeyboard.
+
+If permission is granted, the server logs show `[Helper] READY`.
+
+## Security Notes
+
+AirKeyboard gives paired devices the ability to control your Mac keyboard and mouse. Use it only on trusted local networks.
+
+- The server is HTTP/WebSocket on the local network, not end-to-end encrypted.
+- A new 4-digit pairing code is generated on each server startup.
+- Trusted browser tokens are stored in mobile `localStorage`; server-side token records are hashed in `trusted_tokens.txt`.
+- Delete `trusted_tokens.txt` to revoke all trusted devices.
+- Do not publish generated files such as `AirKeyboard.app`, `keyboard-helper`, `session_info.json`, or `trusted_tokens.txt`.
+
+## How It Works
 
 ```mermaid
 graph LR
-A[iOS Device Browser] -- WebSocket --> B[Node.js Server]
-B -- Stdin Pipe --> C[Swift Daemon]
-C -- CoreGraphics API --> D[macOS Keyboard/Mouse]
+    A["Mobile browser controller"] -->|"WebSocket"| B["airkeyboard-server.js"]
+    B -->|"stdin commands"| C["MacInputInjector.swift"]
+    C -->|"CGEvent"| D["macOS keyboard/mouse"]
+    E["MenuBarApp.swift"] -->|"launches"| B
 ```
 
-1. **Mobile Controller (`public/mobile-controller.js`):** Captures typing, buttons, and trackpad gestures, sending them instantly as custom protocols (`TXT:`, `KEY:`, `MSE:`) over a WebSocket connection.
-2. **AirKeyboard Server (`airkeyboard-server.js`):** Receives the WebSocket messages, handles pairing/trusted devices, and forwards valid input commands to the Swift helper.
-3. **Mac Input Injector (`MacInputInjector.swift`):** Runs continuously (avoiding process startup overhead). It reads `stdin` and uses the macOS `CGEvent` CoreGraphics API to simulate hardware key events, mouse movements, clicks, and scroll wheel actions directly into the active application.
-4. **Menu Bar App (`MenuBarApp.swift`):** Provides the native macOS menu bar launcher, access code display, server toggle, and connected device status.
+1. `public/mobile-controller.js` captures text input, button presses, and trackpad gestures in the mobile browser.
+2. `airkeyboard-server.js` serves the controller, authenticates clients, validates input messages, and forwards commands to the helper.
+3. `MacInputInjector.swift` reads commands from stdin and posts native macOS keyboard/mouse events.
+4. `MenuBarApp.swift` provides the optional native menu bar launcher and status UI.
 
 ## Project Files
 
 - `airkeyboard-server.js` - local HTTP/WebSocket server and authentication layer.
-- `public/index.html` - browser entry point for the iPhone/mobile controller.
+- `public/index.html` - browser entry point for the mobile controller.
 - `public/mobile-controller.js` - mobile keyboard and trackpad interaction logic.
 - `public/mobile-controller.css` - mobile controller UI styling.
 - `MacInputInjector.swift` - native macOS keyboard/mouse event injector.
 - `MenuBarApp.swift` - native macOS menu bar app.
-- `start-airkeyboard.sh` - development/local startup script.
+- `start-airkeyboard.sh` - local startup script.
 - `build-macos-app.sh` - native `.app` bundle builder.
 
----
+## Development
+
+Run syntax checks:
+
+```bash
+npm test
+```
+
+Compile Swift files manually:
+
+```bash
+npm run build:helper
+npm run build:gui
+```
 
 ## License
 
-MIT License. Feel free to use, modify, and distribute!
+MIT. See [LICENSE](LICENSE).

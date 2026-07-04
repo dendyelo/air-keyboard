@@ -1,7 +1,7 @@
 {
   "name": "air-keyboard",
   "version": "1.0.0",
-  "description": "",
+  "description": "Use a mobile browser as a local Wi-Fi keyboard and trackpad for macOS.",
   "main": "airkeyboard-server.js",
   "scripts": {
     "check": "node --check airkeyboard-server.js && node --check public/mobile-controller.js",
@@ -10,9 +10,16 @@
     "build:helper": "swiftc MacInputInjector.swift -o keyboard-helper",
     "build:gui": "swiftc MenuBarApp.swift -o /tmp/AirKeyboard-gui-check"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "macos",
+    "keyboard",
+    "trackpad",
+    "websocket",
+    "ios",
+    "remote-control"
+  ],
+  "author": "AirKeyboard contributors",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "ws": "^8.21.0"

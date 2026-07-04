@@ -146,16 +146,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let title = hostLinkMenuItem.attributedTitle?.string ?? ""
         if !title.isEmpty && !title.contains("offline") {
             let fullURL = "http://\(title)"
-            
+
             // Copy URL to macOS pasteboard (clipboard)
             let pasteboard = NSPasteboard.general
             pasteboard.declareTypes([.string], owner: nil)
             pasteboard.setString(fullURL, forType: .string)
-            
+
             // Give visual feedback in the menu
             let originalTitle = hostLinkMenuItem.attributedTitle
             hostLinkMenuItem.attributedTitle = makeAttributed("Copied to clipboard!", color: NSColor.systemGreen, size: 10, bold: true)
-            
+
             // Revert back to URL after 1.5 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
                 guard let self = self else { return }
