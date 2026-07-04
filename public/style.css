@@ -1,0 +1,462 @@
+:root {
+    --bg-gradient: linear-gradient(135deg, #090d16 0%, #110e26 100%);
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --primary-color: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.5);
+    --accent-color: #a855f7;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --key-bg: rgba(255, 255, 255, 0.07);
+    --key-border: rgba(255, 255, 255, 0.12);
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    overflow-x: hidden;
+}
+
+.glass-container {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 28px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff 30%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.active-devices {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 12px;
+    border-radius: 12px;
+    margin-top: 6px;
+    border: 1px solid var(--glass-border);
+    display: inline-block;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+/* Status Indicator */
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--glass-border);
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.connected {
+    background-color: var(--success-color);
+    box-shadow: 0 0 10px var(--success-color);
+    transition: transform 0.1s ease;
+}
+
+@keyframes send-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 10px var(--success-color);
+    }
+    50% {
+        transform: scale(1.6);
+        box-shadow: 0 0 18px #fff, 0 0 25px var(--success-color);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 10px var(--success-color);
+    }
+}
+
+.dot.connected.pulse {
+    animation: send-pulse 0.12s ease-out;
+}
+
+.dot.disconnected {
+    background-color: var(--danger-color);
+    box-shadow: 0 0 10px var(--danger-color);
+}
+
+/* Section Container */
+.section-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.input-glow-wrapper {
+    position: relative;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+    height: 70px; /* Beautifully adjusted taller area */
+    overflow: hidden;
+}
+
+.input-glow-wrapper:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 18px var(--primary-glow);
+}
+
+textarea {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: transparent !important; /* Invisible typed characters */
+    caret-color: var(--primary-color) !important; /* Glowing visible caret */
+    padding: 0 16px;
+    font-family: inherit;
+    font-size: 1.05rem;
+    text-align: left; /* Keep the blinking caret on the left */
+    line-height: 70px; /* Centers the blinking caret vertically in the 70px box */
+    resize: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+.static-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    text-align: center;
+    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.45); /* Semi-transparent watermark */
+    pointer-events: none; /* Touches fall through to the textarea */
+    font-weight: 500;
+    z-index: 1;
+}
+
+/* Sensitivity Slider styles */
+.sensitivity-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 0 4px;
+    margin-bottom: 2px;
+}
+
+.sensitivity-container span {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.slider {
+    -webkit-appearance: none;
+    width: 130px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    transition: background 0.3s;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+/* Buttons */
+.primary-btn {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    border: none;
+    color: #fff;
+    padding: 14px;
+    border-radius: 14px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.primary-btn:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+}
+
+/* Keypad Section */
+.keypad-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.key-row {
+    display: flex;
+    gap: 8px;
+}
+
+.key-btn {
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    color: var(--text-main);
+    border-radius: 12px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex: 1;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.key-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* D-Pad controls */
+.dpad-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+}
+
+.dpad-layout {
+    display: grid;
+    grid-template-columns: 80px 80px 80px;
+    grid-template-rows: 46px 46px 46px;
+    gap: 8px;
+    align-items: center;
+    justify-items: center;
+    position: relative;
+    width: 256px;
+}
+
+.arrow-btn {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.space-btn {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    height: 100%;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.enter-btn {
+    grid-column: 3;
+    grid-row: 3;
+    width: 100%;
+    height: 100%;
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.enter-btn:active {
+    background: rgba(99, 102, 241, 0.4);
+}
+
+/* Access Code Verification Modal Overlay */
+.auth-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(9, 13, 22, 0.85);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.auth-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.auth-box {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 32px 24px;
+    border-radius: 24px;
+    width: 90%;
+    max-width: 340px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth-box h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.auth-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.auth-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    color: #fff;
+    font-size: 2rem;
+    text-align: center;
+    padding: 10px;
+    border-radius: 12px;
+    letter-spacing: 8px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.auth-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.auth-btn {
+    width: 100%;
+}
+
+.auth-error-msg {
+    color: var(--danger-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    min-height: 1.2em;
+}
+
+/* Touchpad / Mouse remote styles */
+.touchpad-area {
+    width: 100%;
+    height: 240px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px dashed var(--glass-border);
+    border-radius: 18px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    touch-action: none; /* Prevents scroll/zoom gestures on browser */
+    cursor: crosshair;
+}
+
+.touchpad-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    pointer-events: none;
+}
+
+.trackpad-buttons {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+}
+
+.click-btn {
+    padding: 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+

@@ -1,0 +1,23 @@
+# Dependency directories
+node_modules/
+
+# Compiled executables and bundles
+keyboard-helper
+AirKeyboard.app
+AppIcon.iconset/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Dynamic session and security files
+session_info.json
+server.pid
+trusted_tokens.txt
+access_code.txt
+nohup.out

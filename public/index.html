@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AirKeyboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-container">
+        <header>
+            <div class="status-indicator">
+                <span class="dot disconnected" id="statusDot"></span>
+                <span class="status-text" id="statusText">Disconnected</span>
+            </div>
+            <h1>AirKeyboard</h1>
+            <p class="subtitle">Type and control your Mac instantly</p>
+            <div class="active-devices" id="connectedDevices">Active: -</div>
+        </header>
+
+        <!-- Keyboard Input Section -->
+        <div class="section-container">
+            <div class="input-glow-wrapper">
+                <textarea 
+                    id="liveInput" 
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                ></textarea>
+                <div class="static-placeholder">Touch here for keyboard...</div>
+            </div>
+        </div>
+
+        <!-- Trackpad Section -->
+        <div class="section-container">
+            <div id="touchpad" class="touchpad-area">
+                <div class="touchpad-hint">
+                    TRACKPAD ZONE<br>
+                    Slide to Move • Tap to Left Click • 2 Fingers to Scroll
+                </div>
+            </div>
+            
+            <div class="sensitivity-container">
+                <label for="sensitivityRange">Pointer Sensitivity: <span id="sensitivityVal">3.0</span>x</label>
+                <input type="range" id="sensitivityRange" min="1.0" max="10.0" step="0.5" value="3.0" class="slider">
+            </div>
+
+            <div class="trackpad-buttons">
+                <button id="leftClickBtn" class="key-btn click-btn">Left Click</button>
+                <button id="rightClickBtn" class="key-btn click-btn">Right Click</button>
+            </div>
+        </div>
+
+        <!-- Special Keys & D-Pad Section -->
+        <div class="keypad-section">
+            <div class="key-row">
+                <button class="key-btn" data-key="escape">Esc</button>
+                <button class="key-btn" data-key="tab">Tab</button>
+                <button class="key-btn" data-key="backspace">Delete</button>
+            </div>
+            
+            <div class="dpad-container">
+                <div class="dpad-layout">
+                    <div></div>
+                    <button class="key-btn arrow-btn" data-key="up">
+                        <svg viewBox="0 0 24 24" width="20" height="20" style="display:inline-block; vertical-align:middle;"><path d="M12 7l-6 7h12z" fill="currentColor"/></svg>
+                    </button>
+                    <div></div>
+                    
+                    <button class="key-btn arrow-btn" data-key="left">
+                        <svg viewBox="0 0 24 24" width="20" height="20" style="display:inline-block; vertical-align:middle;"><path d="M7 12l7-6v12z" fill="currentColor"/></svg>
+                    </button>
+                    <button class="key-btn space-btn" data-key="space">Space</button>
+                    <button class="key-btn arrow-btn" data-key="right">
+                        <svg viewBox="0 0 24 24" width="20" height="20" style="display:inline-block; vertical-align:middle;"><path d="M17 12l-7-6v12z" fill="currentColor"/></svg>
+                    </button>
+                    
+                    <div></div>
+                    <button class="key-btn arrow-btn" data-key="down">
+                        <svg viewBox="0 0 24 24" width="20" height="20" style="display:inline-block; vertical-align:middle;"><path d="M12 17l-6-7h12z" fill="currentColor"/></svg>
+                    </button>
+                    <button class="key-btn enter-btn" data-key="enter">⏎ Enter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Code Overlay -->
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-box">
+            <h2>Verification Required</h2>
+            <p class="auth-desc">Enter the 4-digit Access Code shown in your Mac's terminal:</p>
+            <input type="tel" id="accessCodeInput" maxlength="4" placeholder="••••" autocomplete="off" class="auth-input">
+            <button id="authBtn" class="primary-btn auth-btn">Verify Device</button>
+            <p id="authError" class="auth-error-msg"></p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
