@@ -67,6 +67,10 @@ function connect() {
                 localStorage.setItem('airkeyboard_token', newToken);
             }
             hideAuthOverlay();
+        } else if (msg === 'AUTH_TOKEN_FAIL') {
+            localStorage.removeItem('airkeyboard_token');
+            showAuthOverlay();
+            authError.textContent = ""; // Silent prompt (no error message yet)
         } else if (msg === 'AUTH_FAIL') {
             localStorage.removeItem('airkeyboard_token');
             accessCodeInput.value = ""; // Clear incorrect code on failure

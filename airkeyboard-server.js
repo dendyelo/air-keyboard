@@ -353,9 +353,9 @@ function forwardInputCommand(data) {
   return false;
 }
 
-function failAuthentication(ws, ip, deviceLabel, reason) {
+function failAuthentication(ws, ip, deviceLabel, reason, errorType = 'AUTH_FAIL') {
   const locked = recordAuthFailure(ip);
-  ws.send(locked ? 'AUTH_LOCKED' : 'AUTH_FAIL');
+  ws.send(locked ? 'AUTH_LOCKED' : errorType);
   console.log(`[Fail] ${deviceLabel} ${reason}${locked ? ' IP temporarily locked.' : ''}`);
   ws.close();
 }
@@ -368,7 +368,7 @@ function authenticateWithToken(ws, ip, deviceLabel, token) {
     console.log(`[Success] ${deviceLabel} authenticated via trusted token.`);
     broadcastActiveDevices();
   } else {
-    failAuthentication(ws, ip, deviceLabel, 'sent invalid token.');
+    failAuthentication(ws, ip, deviceLabel, 'sent invalid token.', 'AUTH_TOKEN_FAIL');
   }
 }
 
@@ -385,7 +385,7 @@ function authenticateWithCode(ws, ip, deviceLabel, code) {
     console.log(`[Success] ${deviceLabel} authenticated with Access Code. Device is now trusted.`);
     broadcastActiveDevices();
   } else {
-    failAuthentication(ws, ip, deviceLabel, 'sent incorrect Access Code.');
+    failAuthentication(ws, ip, deviceLabel, 'sent incorrect Access Code.', 'AUTH_FAIL');
   }
 }
 

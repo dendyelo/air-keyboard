@@ -9,13 +9,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var serverErrorPipe: Pipe?
     var pollTimer: Timer?
     
-    // Menu items
-    var titleMenuItem: NSMenuItem!
-    var statusMenuItem: NSMenuItem!
+    // Ultra-Minimalist Menu Items
     var codeMenuItem: NSMenuItem!
     var hostLinkMenuItem: NSMenuItem!
     var devicesMenuItem: NSMenuItem!
-    var toggleServerMenuItem: NSMenuItem!
     var quitMenuItem: NSMenuItem!
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -34,36 +31,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
-        // 2. Build futuristic dropdown menu
+        // 2. Build ultra-minimalist dropdown menu
         menu = NSMenu()
         menu.autoenablesItems = false
         
-        // App Title (Futuristic design label)
-        titleMenuItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        titleMenuItem.isEnabled = false
-        titleMenuItem.attributedTitle = makeAttributed("AIRKEYBOARD", color: NSColor(red: 0.8, green: 0.65, blue: 0.97, alpha: 1.0), size: 10, bold: true) // Mauve
-        menu.addItem(titleMenuItem)
-        
-        // Status indicator
-        statusMenuItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        statusMenuItem.isEnabled = false
-        setStatusOffline()
-        menu.addItem(statusMenuItem)
-        
-        menu.addItem(NSMenuItem.separator())
-        
-        // Access Code display
+        // Code / Booting display (starts as booting status)
         codeMenuItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         codeMenuItem.isEnabled = false
-        setCode("----")
+        setBootingState()
         menu.addItem(codeMenuItem)
         
-        // Single clean clickable Bonjour link
+        // Bonjour Link (Only visible when active)
         hostLinkMenuItem = NSMenuItem(title: "", action: #selector(openHostURL), keyEquivalent: "")
         setLink("")
         menu.addItem(hostLinkMenuItem)
         
-        // Active connected devices tracker
+        // Connected Devices (Only visible when client is active)
         devicesMenuItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         devicesMenuItem.isEnabled = false
         setDevices("")
@@ -71,19 +54,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
-        // Start/Stop toggle button
-        toggleServerMenuItem = NSMenuItem(title: "", action: #selector(toggleServer), keyEquivalent: "s")
-        setToggleState(running: false)
-        menu.addItem(toggleServerMenuItem)
-        
-        // Quit button
+        // Quit button (Since server runs continuously, quitting the app stops the server)
         quitMenuItem = NSMenuItem(title: "", action: #selector(quitApp), keyEquivalent: "q")
         setQuitState()
         menu.addItem(quitMenuItem)
         
         statusItem.menu = menu
         
-        // Auto-start server
+        // Start server automatically on application launch
         startServer()
         
         // Poll for updates (using .common mode so timer fires even when menu is open)
@@ -92,16 +70,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         pollTimer = timer
     }
     
-    // Attributed Text Helper
+    // Futuristic Monospaced Text Helper
     func makeAttributed(_ text: String, color: NSColor, size: CGFloat, bold: Bool = false) -> NSAttributedString {
-        let font = bold ? NSFont.boldSystemFont(ofSize: size) : NSFont.systemFont(ofSize: size)
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineSpacing = 2
-        
+        let weight: NSFont.Weight = bold ? .bold : .regular
+        let font = NSFont.monospacedSystemFont(ofSize: size, weight: weight)
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: color,
-            .font: font,
-            .paragraphStyle: paragraphStyle
+            .font: font
         ]
         return NSAttributedString(string: text, attributes: attributes)
     }
@@ -115,55 +90,48 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    // Status State setters
-    func setStatusActive() {
-        statusMenuItem.attributedTitle = makeAttributed("Active", color: NSColor.systemGreen, size: 13, bold: true)
-        setMenuIcon(statusMenuItem, name: "circle.fill")
+    // UI State Setters
+    func setBootingState() {
+        codeMenuItem.attributedTitle = makeAttributed("Booting...", color: NSColor.systemOrange, size: 11, bold: true)
+        setMenuIcon(codeMenuItem, name: "circle.fill")
     }
     
-    func setStatusOffline() {
-        statusMenuItem.attributedTitle = makeAttributed("Offline", color: NSColor.systemRed, size: 13, bold: true)
-        setMenuIcon(statusMenuItem, name: "circle.fill")
-    }
-    
-    func setStatusBooting() {
-        statusMenuItem.attributedTitle = makeAttributed("Connecting...", color: NSColor.systemOrange, size: 13, bold: true)
-        setMenuIcon(statusMenuItem, name: "circle.fill")
-    }
-    
-    func setCode(_ code: String) {
-        codeMenuItem.attributedTitle = makeAttributed("Code  \(code)", color: NSColor.white, size: 12, bold: true)
+    func setCodeState(code: String) {
+        codeMenuItem.attributedTitle = makeAttributed("Code: \(code)", color: NSColor.white, size: 11, bold: true)
         setMenuIcon(codeMenuItem, name: "lock.fill")
+    }
+    
+    func setErrorState() {
+        codeMenuItem.attributedTitle = makeAttributed("Start Error", color: NSColor.systemRed, size: 11, bold: true)
+        setMenuIcon(codeMenuItem, name: "circle.fill")
     }
     
     func setLink(_ urlStr: String) {
         if urlStr.isEmpty {
-            hostLinkMenuItem.attributedTitle = makeAttributed("No link available", color: NSColor.secondaryLabelColor, size: 11)
-            hostLinkMenuItem.isEnabled = false
+            hostLinkMenuItem.isHidden = true
         } else {
-            // Trim scheme for simple elegant layout
+            // Trim scheme for clean visual layout
             let cleanLink = urlStr.replacingOccurrences(of: "http://", with: "")
-            hostLinkMenuItem.attributedTitle = makeAttributed(cleanLink, color: NSColor(red: 0.54, green: 0.7, blue: 0.98, alpha: 1.0), size: 11) // #89b4fa
+            hostLinkMenuItem.attributedTitle = makeAttributed(cleanLink, color: NSColor(red: 0.54, green: 0.7, blue: 0.98, alpha: 1.0), size: 10) // #89b4fa
             hostLinkMenuItem.isEnabled = true
+            hostLinkMenuItem.isHidden = false
         }
         setMenuIcon(hostLinkMenuItem, name: "link")
     }
     
     func setDevices(_ devices: String) {
-        let label = devices.isEmpty ? "No devices connected" : devices
-        devicesMenuItem.attributedTitle = makeAttributed(label, color: NSColor.secondaryLabelColor, size: 11)
+        if devices.isEmpty {
+            devicesMenuItem.isHidden = true
+        } else {
+            devicesMenuItem.attributedTitle = makeAttributed("Active: \(devices)", color: NSColor.secondaryLabelColor, size: 10)
+            devicesMenuItem.isEnabled = false
+            devicesMenuItem.isHidden = false
+        }
         setMenuIcon(devicesMenuItem, name: "iphone")
     }
     
-    func setToggleState(running: Bool) {
-        let title = running ? "Stop Server" : "Start Server"
-        let color = running ? NSColor.systemRed : NSColor.systemGreen
-        toggleServerMenuItem.attributedTitle = makeAttributed(title, color: color, size: 12, bold: true)
-        setMenuIcon(toggleServerMenuItem, name: "power")
-    }
-    
     func setQuitState() {
-        quitMenuItem.attributedTitle = makeAttributed("Quit", color: NSColor.secondaryLabelColor, size: 12)
+        quitMenuItem.attributedTitle = makeAttributed("Quit", color: NSColor.secondaryLabelColor, size: 11)
         setMenuIcon(quitMenuItem, name: "xmark")
     }
 
@@ -175,11 +143,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func openHostURL() {
-        // Open the parsed link
         let title = hostLinkMenuItem.attributedTitle?.string ?? ""
-        if !title.isEmpty && title != "No link available" {
-            if let url = URL(string: "http://\(title)") {
-                NSWorkspace.shared.open(url)
+        if !title.isEmpty && !title.contains("offline") {
+            let fullURL = "http://\(title)"
+            
+            // Copy URL to macOS pasteboard (clipboard)
+            let pasteboard = NSPasteboard.general
+            pasteboard.declareTypes([.string], owner: nil)
+            pasteboard.setString(fullURL, forType: .string)
+            
+            // Give visual feedback in the menu
+            let originalTitle = hostLinkMenuItem.attributedTitle
+            hostLinkMenuItem.attributedTitle = makeAttributed("Copied to clipboard!", color: NSColor.systemGreen, size: 10, bold: true)
+            
+            // Revert back to URL after 1.5 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                guard let self = self else { return }
+                if self.serverProcess != nil {
+                    self.hostLinkMenuItem.attributedTitle = originalTitle
+                }
             }
         }
     }
@@ -217,22 +199,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     guard let self = self, self.serverProcess === finishedProc else { return }
                     self.serverProcess = nil
                     self.clearServerPipes()
-                    self.setStatusOffline()
-                    self.setCode("----")
                     self.setLink("")
                     self.setDevices("")
-                    self.setToggleState(running: false)
+                    self.setErrorState()
                 }
             }
             
             do {
                 try proc.run()
                 serverProcess = proc
-                
-                setStatusBooting()
-                setToggleState(running: true)
+                setBootingState()
             } catch {
-                setStatusOffline()
+                setErrorState()
             }
         }
     }
@@ -251,19 +229,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let infoPath = (workingDir as NSString).appendingPathComponent("session_info.json")
             try? fm.removeItem(atPath: infoPath)
             
-            setStatusOffline()
-            setCode("----")
             setLink("")
             setDevices("")
-            setToggleState(running: false)
-        }
-    }
-    
-    @objc func toggleServer() {
-        if serverProcess != nil {
-            stopServer()
-        } else {
-            startServer()
         }
     }
     
@@ -280,23 +247,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 let data = try Data(contentsOf: URL(fileURLWithPath: infoPath))
                 if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                    if let code = json["code"] as? String {
-                        setCode(code)
-                    }
-                    if let host = json["host"] as? String {
-                        setLink(host)
-                    }
-                    if let devices = json["devices"] as? String {
-                        setDevices(devices)
-                    }
+                    let code = json["code"] as? String ?? "----"
+                    let host = json["host"] as? String ?? ""
+                    let devices = json["devices"] as? String ?? ""
                     
-                    setStatusActive()
-                    setToggleState(running: true)
+                    setLink(host)
+                    setDevices(devices)
+                    setCodeState(code: code)
                 }
             } catch {}
         } else {
+            // Failsafe: if process stopped but no error thrown
             if let proc = serverProcess, !proc.isRunning {
                 stopServer()
+                setErrorState()
             }
         }
     }
