@@ -72,6 +72,11 @@ function connect() {
             accessCodeInput.value = ""; // Clear incorrect code on failure
             showAuthOverlay();
             authError.textContent = "Incorrect Access Code. Try again.";
+        } else if (msg === 'AUTH_LOCKED') {
+            localStorage.removeItem('airkeyboard_token');
+            accessCodeInput.value = "";
+            showAuthOverlay();
+            authError.textContent = "Too many attempts. Wait a minute, then try again.";
         } else if (msg.startsWith('DEVICES:')) {
             const list = msg.substring(8).trim();
             document.getElementById('connectedDevices').textContent = list ? `Active: ${list}` : 'Active: None';
@@ -235,8 +240,10 @@ let lastX = 0;
 let lastY = 0;
 let lastScrollY = 0;
 let isMultiTouch = false;
+let multiTouchMoved = false;
 let touchStartX = 0;
 let touchStartY = 0;
+let touchStartCenterY = 0;
 let touchStartTime = 0;
 
 touchpad.addEventListener('touchstart', (e) => {
@@ -246,13 +253,16 @@ touchpad.addEventListener('touchstart', (e) => {
     
     if (t.length === 1) {
         isMultiTouch = false;
+        multiTouchMoved = false;
         lastX = t[0].clientX;
         lastY = t[0].clientY;
         touchStartX = t[0].clientX;
         touchStartY = t[0].clientY;
     } else if (t.length === 2) {
         isMultiTouch = true;
+        multiTouchMoved = false;
         lastScrollY = (t[0].clientY + t[1].clientY) / 2;
+        touchStartCenterY = lastScrollY;
     }
 });
 
@@ -280,6 +290,9 @@ touchpad.addEventListener('touchmove', (e) => {
     } else if (t.length === 2) {
         const currentScrollY = (t[0].clientY + t[1].clientY) / 2;
         const dy = currentScrollY - lastScrollY;
+        if (Math.abs(currentScrollY - touchStartCenterY) > 8) {
+            multiTouchMoved = true;
+        }
         
         // Scroll speed multiplier (reversed direction to match standard Apple Natural Scroll)
         const scrollSensitivity = 1.6;
@@ -303,7 +316,7 @@ touchpad.addEventListener('touchend', (e) => {
                 send('MSE:click');
                 triggerHaptic();
             }
-        } else {
+        } else if (!multiTouchMoved) {
             // Short tap with 2 fingers = Right Click
             send('MSE:rclick');
             triggerHaptic(true);

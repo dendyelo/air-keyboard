@@ -24,12 +24,12 @@ if [ ! -d node_modules/ws ]; then
 fi
 
 
-# Compile Swift helper only if it does not exist to preserve macOS Accessibility permissions
-if [ ! -f keyboard-helper ]; then
+# Compile Swift helper when missing or when the source changed.
+if [ ! -f keyboard-helper ] || [ MacInputInjector.swift -nt keyboard-helper ]; then
     echo "Compiling Swift Helper..."
-    swiftc KeyboardHelper.swift -o keyboard-helper
+    swiftc MacInputInjector.swift -o keyboard-helper
     if [ $? -ne 0 ]; then
-        echo "Error: Failed to compile KeyboardHelper.swift"
+        echo "Error: Failed to compile MacInputInjector.swift"
         exit 1
     fi
 else
@@ -42,5 +42,5 @@ echo "=========================================="
 echo "Starting AirKeyboard Server..."
 echo "=========================================="
 
-# Run the Node.js server
-node server.js
+# Replace this shell with Node so GUI stop/quit signals reach the server directly.
+exec node airkeyboard-server.js

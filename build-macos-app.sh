@@ -19,7 +19,7 @@ INPUT_IMAGE="$1"
 
 if [ -z "$INPUT_IMAGE" ]; then
     echo "Error: Please specify the path to the app icon image."
-    echo "Usage: ./build-app.sh <path_to_png_or_jpg>"
+    echo "Usage: ./build-macos-app.sh <path_to_png_or_jpg>"
     exit 1
 fi
 
@@ -40,16 +40,16 @@ mkdir -p "$APP_SOURCE_DIR"
 # 3. Copy all source files (except the GUI code itself) to self-contained app resources
 echo "Copying source files to App resources..."
 cp -R public "$APP_SOURCE_DIR/"
-cp server.js "$APP_SOURCE_DIR/"
-cp KeyboardHelper.swift "$APP_SOURCE_DIR/"
-cp run.sh "$APP_SOURCE_DIR/"
+cp airkeyboard-server.js "$APP_SOURCE_DIR/"
+cp MacInputInjector.swift "$APP_SOURCE_DIR/"
+cp start-airkeyboard.sh "$APP_SOURCE_DIR/"
 cp package.json "$APP_SOURCE_DIR/"
 
 # Pre-compile the Swift helper binary so it doesn't re-compile and trigger macOS Accessibility warnings
 echo "Pre-compiling Swift Helper for the App bundle..."
-swiftc KeyboardHelper.swift -o "$APP_SOURCE_DIR/keyboard-helper"
+swiftc MacInputInjector.swift -o "$APP_SOURCE_DIR/keyboard-helper"
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to compile KeyboardHelper.swift for App bundle"
+    echo "Error: Failed to compile MacInputInjector.swift for App bundle"
     exit 1
 fi
 chmod +x "$APP_SOURCE_DIR/keyboard-helper"
@@ -122,13 +122,13 @@ cat <<EOF > "$CONTENTS_DIR/Info.plist"
 </plist>
 EOF
 
-# 6. Compile GUI.swift directly as the native application executable
-echo "Compiling GUI.swift native App..."
+# 6. Compile MenuBarApp.swift directly as the native application executable
+echo "Compiling MenuBarApp.swift native App..."
 SDK_PATH=$(xcrun --show-sdk-path --sdk macosx)
-swiftc -sdk "$SDK_PATH" GUI.swift -o "$MACOS_DIR/AirKeyboard"
+swiftc -sdk "$SDK_PATH" MenuBarApp.swift -o "$MACOS_DIR/AirKeyboard"
 
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to compile GUI.swift"
+    echo "Error: Failed to compile MenuBarApp.swift"
     exit 1
 fi
 
@@ -138,7 +138,7 @@ echo "Deep-signing the application bundle..."
 codesign --force --deep --sign - "$APP_NAME"
 
 chmod +x "$MACOS_DIR/AirKeyboard"
-chmod +x "$APP_SOURCE_DIR/run.sh"
+chmod +x "$APP_SOURCE_DIR/start-airkeyboard.sh"
 
 echo "=========================================="
 echo "BUILD SUCCESSFUL: Native GUI AirKeyboard.app created!"

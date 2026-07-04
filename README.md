@@ -45,7 +45,7 @@ Instead of launching through a terminal window, you can run AirKeyboard as a nat
 2.  Open it from your **Launchpad** or **Spotlight Search**.
 3.  *(Optional)* Recompile the application bundle with a custom icon image of your choice:
     ```bash
-    ./build-app.sh <path_to_custom_image_png_or_jpg>
+    ./build-macos-app.sh <path_to_custom_image_png_or_jpg>
     ```
 
 ---
@@ -55,7 +55,7 @@ Instead of launching through a terminal window, you can run AirKeyboard as a nat
 1. **Clone or download** this repository to your Mac.
 2. In your Terminal, navigate to the project folder and run the startup script:
    ```bash
-   ./run.sh
+   ./start-airkeyboard.sh
    ```
    *(This script will automatically install Node dependencies, compile the Swift helper binary, and launch the server).*
 3. The Terminal will print your local IP address, your Bonjour hostname, the generated Access Code for this session, and instructions:
@@ -97,9 +97,21 @@ B -- Stdin Pipe --> C[Swift Daemon]
 C -- CoreGraphics API --> D[macOS Keyboard/Mouse]
 ```
 
-1. **iOS Device Browser (`app.js`):** Captures typing, buttons, and trackpad gestures, sending them instantly as custom protocols (`TXT:`, `KEY:`, `MSE:`) over a WebSocket connection.
-2. **Node.js Server (`server.js`):** Receives the WebSocket messages and forwards them directly to the `stdin` of the Swift child process.
-3. **Swift Daemon (`KeyboardHelper.swift`):** Runs continuously (avoiding process startup overhead). It reads `stdin` and uses the macOS `CGEvent` CoreGraphics API to simulate hardware key events, mouse movements, clicks, and scroll wheel actions directly into the active application.
+1. **Mobile Controller (`public/mobile-controller.js`):** Captures typing, buttons, and trackpad gestures, sending them instantly as custom protocols (`TXT:`, `KEY:`, `MSE:`) over a WebSocket connection.
+2. **AirKeyboard Server (`airkeyboard-server.js`):** Receives the WebSocket messages, handles pairing/trusted devices, and forwards valid input commands to the Swift helper.
+3. **Mac Input Injector (`MacInputInjector.swift`):** Runs continuously (avoiding process startup overhead). It reads `stdin` and uses the macOS `CGEvent` CoreGraphics API to simulate hardware key events, mouse movements, clicks, and scroll wheel actions directly into the active application.
+4. **Menu Bar App (`MenuBarApp.swift`):** Provides the native macOS menu bar launcher, access code display, server toggle, and connected device status.
+
+## Project Files
+
+- `airkeyboard-server.js` - local HTTP/WebSocket server and authentication layer.
+- `public/index.html` - browser entry point for the iPhone/mobile controller.
+- `public/mobile-controller.js` - mobile keyboard and trackpad interaction logic.
+- `public/mobile-controller.css` - mobile controller UI styling.
+- `MacInputInjector.swift` - native macOS keyboard/mouse event injector.
+- `MenuBarApp.swift` - native macOS menu bar app.
+- `start-airkeyboard.sh` - development/local startup script.
+- `build-macos-app.sh` - native `.app` bundle builder.
 
 ---
 

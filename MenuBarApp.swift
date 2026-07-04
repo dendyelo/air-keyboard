@@ -5,6 +5,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var menu: NSMenu!
     var serverProcess: Process?
+    var serverOutputPipe: Pipe?
+    var serverErrorPipe: Pipe?
     var pollTimer: Timer?
     
     // Menu items
@@ -164,6 +166,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         quitMenuItem.attributedTitle = makeAttributed("Quit", color: NSColor.secondaryLabelColor, size: 12)
         setMenuIcon(quitMenuItem, name: "xmark")
     }
+
+    func clearServerPipes() {
+        serverOutputPipe?.fileHandleForReading.readabilityHandler = nil
+        serverErrorPipe?.fileHandleForReading.readabilityHandler = nil
+        serverOutputPipe = nil
+        serverErrorPipe = nil
+    }
     
     @objc func openHostURL() {
         // Open the parsed link
@@ -188,9 +197,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let proc = Process()
             proc.currentDirectoryPath = workingDir
             proc.launchPath = "/bin/bash"
-            proc.arguments = ["./run.sh"]
-            proc.standardOutput = Pipe()
-            proc.standardError = Pipe()
+            proc.arguments = ["./start-airkeyboard.sh"]
+
+            let outputPipe = Pipe()
+            let errorPipe = Pipe()
+            outputPipe.fileHandleForReading.readabilityHandler = { handle in
+                _ = handle.availableData
+            }
+            errorPipe.fileHandleForReading.readabilityHandler = { handle in
+                _ = handle.availableData
+            }
+            proc.standardOutput = outputPipe
+            proc.standardError = errorPipe
+            serverOutputPipe = outputPipe
+            serverErrorPipe = errorPipe
+
+            proc.terminationHandler = { [weak self] finishedProc in
+                DispatchQueue.main.async {
+                    guard let self = self, self.serverProcess === finishedProc else { return }
+                    self.serverProcess = nil
+                    self.clearServerPipes()
+                    self.setStatusOffline()
+                    self.setCode("----")
+                    self.setLink("")
+                    self.setDevices("")
+                    self.setToggleState(running: false)
+                }
+            }
             
             do {
                 try proc.run()
@@ -206,13 +239,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc func stopServer() {
         if let proc = serverProcess {
+            proc.terminationHandler = nil
             proc.terminate()
             serverProcess = nil
-            
-            let killProc = Process()
-            killProc.launchPath = "/usr/bin/killall"
-            killProc.arguments = ["keyboard-helper"]
-            try? killProc.run()
+            clearServerPipes()
             
             let appPath = Bundle.main.bundlePath
             let fm = FileManager.default

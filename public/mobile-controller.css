@@ -23,7 +23,7 @@
 }
 
 body {
-    font-family: 'Outfit', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
     background: var(--bg-gradient);
     color: var(--text-main);
     min-height: 100vh;
@@ -459,4 +459,3 @@ textarea {
     font-size: 0.9rem;
     font-weight: 600;
 }
-

@@ -2,10 +2,13 @@
   "name": "air-keyboard",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "airkeyboard-server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "check": "node --check airkeyboard-server.js && node --check public/mobile-controller.js",
+    "test": "npm run check",
+    "start": "node airkeyboard-server.js",
+    "build:helper": "swiftc MacInputInjector.swift -o keyboard-helper",
+    "build:gui": "swiftc MenuBarApp.swift -o /tmp/AirKeyboard-gui-check"
   },
   "keywords": [],
   "author": "",

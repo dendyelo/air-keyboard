@@ -72,6 +72,10 @@ func postMouseScroll(dy: Int32) {
     scrollEvent?.post(tap: .cghidEventTap)
 }
 
+func clamp(_ value: Double, min minValue: Double, max maxValue: Double) -> Double {
+    return min(max(value, minValue), maxValue)
+}
+
 func checkAccessibility() -> Bool {
     let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
     return AXIsProcessTrustedWithOptions(options as CFDictionary)
@@ -115,6 +119,11 @@ func main() {
             default:
                 break
             }
+        } else if trimmed.hasPrefix("TXT64:") {
+            let encoded = String(trimmed.dropFirst(6))
+            if let data = Data(base64Encoded: encoded), let text = String(data: data, encoding: .utf8) {
+                postUnicodeString(text)
+            }
         } else if trimmed.hasPrefix("TXT:") {
             let text = String(trimmed.dropFirst(4))
             postUnicodeString(text)
@@ -126,8 +135,8 @@ func main() {
                 postMouseClick(button: .right)
             } else if mcmd.hasPrefix("move:") {
                 let coords = String(mcmd.dropFirst(5)).split(separator: ",")
-                if coords.count == 2, let dx = Double(coords[0]), let dy = Double(coords[1]) {
-                    postMouseMove(dx: dx, dy: dy)
+                if coords.count == 2, let dx = Double(coords[0]), let dy = Double(coords[1]), dx.isFinite, dy.isFinite {
+                    postMouseMove(dx: clamp(dx, min: -500, max: 500), dy: clamp(dy, min: -500, max: 500))
                 }
             } else if mcmd.hasPrefix("scroll:") {
                 let sval = String(mcmd.dropFirst(7))
