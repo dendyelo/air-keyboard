@@ -26,27 +26,6 @@ It is useful for headless Mac setups, quick remote input on the same network, or
 - Swift compiler (`swiftc`), usually installed with Xcode Command Line Tools.
 - A mobile device on the same trusted local network.
 
-## Quick Start
-
-Run AirKeyboard from the repository:
-
-```bash
-./start-airkeyboard.sh
-```
-
-The script installs the Node dependency if needed, compiles the Swift input helper if needed, and starts the local server. The terminal prints URLs and a pairing code:
-
-```text
-AirKeyboard Server is running (HTTP)!
-Open browser on your iOS device and go to:
-http://192.168.1.15:3000
-http://Your-Mac.local:3000
-
-Access Code for this session: 6590
-```
-
-Open one of the URLs on your mobile device, enter the 4-digit code, then use the browser page as a keyboard and trackpad.
-
 ## Installation & Setup
 
 You can either download the pre-compiled application directly or build it from source.
@@ -59,7 +38,6 @@ You can either download the pre-compiled application directly or build it from s
    ```bash
    xattr -d com.apple.quarantine /Applications/AirKeyboard.app
    ```
-4. Launch `AirKeyboard.app` from your Applications folder.
 
 ### Method 2: Build from Source (Developers)
 
@@ -67,25 +45,31 @@ If you prefer to compile and build the app bundle yourself:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/username/air-keyboard.git
+   git clone https://github.com/dendyelo/air-keyboard.git
    cd air-keyboard
    ```
-2. Build the app bundle with the default keycap icon:
+2. Build the app bundle:
    ```bash
    ./build-macos-app.sh
    ```
    *(You can pass a custom PNG/JPG path to override the default icon: `./build-macos-app.sh /path/to/icon.png`)*
-3. Move the generated `AirKeyboard.app` into `/Applications` and launch it.
+3. Move the generated `AirKeyboard.app` into `/Applications`.
 
 ## macOS Accessibility Permission
 
-macOS requires Accessibility permission before an app can post global keyboard and mouse events.
+macOS requires Accessibility permission to allow the Swift helper to inject global keyboard and mouse events.
 
-1. Open System Settings.
-2. Go to Privacy & Security > Accessibility.
-3. Enable the terminal app or `AirKeyboard.app`, depending on how you launch AirKeyboard.
+1. Launch `AirKeyboard.app` from your Applications folder.
+2. When prompted, open **System Settings > Privacy & Security > Accessibility**.
+3. Enable the toggle for **AirKeyboard**.
 
-If permission is granted, the server logs show `[Helper] READY`.
+## How to Use
+
+1. Click the keyboard icon in your macOS Menu Bar.
+2. Click the connection URL (e.g. `your-mac.local:3000`) to copy the link directly to your clipboard.
+3. Open Safari or Chrome on your mobile device (iPhone/iPad), paste the link, and enter the 4-digit **Code** displayed in the Menu Bar.
+4. Use your phone's screen as a trackpad and keyboard to control your Mac.
+5. To stop the server and close the app, simply click **Quit** in the Menu Bar dropdown.
 
 ## Security Notes
 
