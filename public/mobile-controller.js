@@ -250,6 +250,8 @@ let touchStartY = 0;
 let touchStartCenterY = 0;
 let touchStartTime = 0;
 let initialPinchDistance = 0;
+let lastZoomTime = 0;
+
 
 touchpad.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -297,16 +299,21 @@ touchpad.addEventListener('touchmove', (e) => {
         const currentPinchDistance = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         
         // Check if the fingers are pinching (distance changed significantly)
-        if (initialPinchDistance > 0 && Math.abs(currentPinchDistance - initialPinchDistance) > 10) {
-            const ratio = currentPinchDistance / initialPinchDistance;
-            if (ratio > 1.05) {
-                send('MSE:zoom:1'); // Zoom In (Cmd + =)
-                initialPinchDistance = currentPinchDistance;
-                multiTouchMoved = true;
-            } else if (ratio < 0.95) {
-                send('MSE:zoom:-1'); // Zoom Out (Cmd + -)
-                initialPinchDistance = currentPinchDistance;
-                multiTouchMoved = true;
+        if (initialPinchDistance > 0 && Math.abs(currentPinchDistance - initialPinchDistance) > 12) {
+            const now = Date.now();
+            if (now - lastZoomTime > 140) { // Throttle to prevent event queue lag
+                const ratio = currentPinchDistance / initialPinchDistance;
+                if (ratio > 1.06) {
+                    send('MSE:zoom:1'); // Zoom In (Cmd + =)
+                    initialPinchDistance = currentPinchDistance;
+                    lastZoomTime = now;
+                    multiTouchMoved = true;
+                } else if (ratio < 0.94) {
+                    send('MSE:zoom:-1'); // Zoom Out (Cmd + -)
+                    initialPinchDistance = currentPinchDistance;
+                    lastZoomTime = now;
+                    multiTouchMoved = true;
+                }
             }
         } else {
             // Otherwise treat as standard 2-finger scroll
