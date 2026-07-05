@@ -2,11 +2,18 @@
 
 AirKeyboard turns an iPhone, iPad, or other mobile browser into a local Wi-Fi keyboard and trackpad for macOS. The phone opens a web controller, the Mac runs a small Node.js/WebSocket server, and a native Swift helper injects keyboard and mouse events through macOS CoreGraphics.
 
-<p align="center">
-  <img src="assets/menubar-screenshot.png" alt="macOS Menu Bar App" width="35%"/>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/mobile-controller-screenshot.png" alt="Mobile Web Controller" width="30%"/>
-</p>
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" valign="center" style="border: none;">
+        <img src="assets/menubar-screenshot.png" alt="macOS Menu Bar App" width="300"/>
+      </td>
+      <td align="center" valign="center" style="border: none;">
+        <img src="assets/mobile-controller-screenshot.png" alt="Mobile Web Controller" width="210"/>
+      </td>
+    </tr>
+  </table>
+</div>
 
 It is useful for headless Mac setups, quick remote input on the same network, or as an emergency keyboard/trackpad when a physical device is unavailable.
 
