@@ -13,18 +13,20 @@ CONTENTS_DIR="$APP_NAME/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 APP_SOURCE_DIR="$RESOURCES_DIR/app"
+DEFAULT_ICON_PATH="assets/app-icon.png"
 
-# Image input path (passed as argument)
-INPUT_IMAGE="$1"
+# Image input path (passed as argument, or default project icon)
+INPUT_IMAGE="${1:-$DEFAULT_ICON_PATH}"
 
 if [ -z "$INPUT_IMAGE" ]; then
     echo "Error: Please specify the path to the app icon image."
-    echo "Usage: ./build-macos-app.sh <path_to_png_or_jpg>"
+    echo "Usage: ./build-macos-app.sh [path_to_png_or_jpg]"
     exit 1
 fi
 
 if [ ! -f "$INPUT_IMAGE" ]; then
     echo "Error: Image file not found at '$INPUT_IMAGE'"
+    echo "Usage: ./build-macos-app.sh [path_to_png_or_jpg]"
     exit 1
 fi
 

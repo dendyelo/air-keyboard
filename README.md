@@ -49,11 +49,13 @@ Open one of the URLs on your mobile device, enter the 4-digit code, then use the
 
 AirKeyboard can also be packaged as a native macOS menu bar app. The menu bar app starts the server automatically, shows the current access code, copies the mobile URL when clicked, and stops the server when the app quits.
 
-Build the `.app` bundle with a custom icon:
+Build the `.app` bundle with the bundled app icon:
 
 ```bash
-./build-macos-app.sh /path/to/icon.png
+./build-macos-app.sh
 ```
+
+You can still pass a custom PNG/JPG path to override `assets/app-icon.png`.
 
 Then move the generated `AirKeyboard.app` into `/Applications` if desired. Generated bundles, binaries, session files, and trusted token files are intentionally ignored by Git.
 
@@ -98,6 +100,7 @@ graph LR
 - `public/index.html` - browser entry point for the mobile controller.
 - `public/mobile-controller.js` - mobile keyboard and trackpad interaction logic.
 - `public/mobile-controller.css` - mobile controller UI styling.
+- `assets/app-icon.png` - source image used for the generated macOS app icon.
 - `MacInputInjector.swift` - native macOS keyboard/mouse event injector.
 - `MenuBarApp.swift` - native macOS menu bar app.
 - `start-airkeyboard.sh` - local startup script.
