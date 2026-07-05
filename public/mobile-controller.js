@@ -121,16 +121,31 @@ accessCodeInput.addEventListener('keydown', (e) => {
     }
 });
 
+const PULSE_THROTTLE_MS = 140;
+let lastPulseTime = 0;
+
+function shouldPulseCommand(command) {
+    return !command.startsWith('MSE:move:') &&
+        !command.startsWith('MSE:scroll:') &&
+        !command.startsWith('MSE:zoom:');
+}
+
 // Send command to server
-function send(command) {
+function send(command, options = {}) {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(command);
-        triggerPulse();
+        if (options.pulse ?? shouldPulseCommand(command)) {
+            triggerPulse();
+        }
     }
 }
 
 // Flash status indicator on transmission
 function triggerPulse() {
+    const now = performance.now();
+    if (now - lastPulseTime < PULSE_THROTTLE_MS) return;
+    lastPulseTime = now;
+
     statusDot.classList.remove('pulse');
     void statusDot.offsetWidth; // Force reflow
     statusDot.classList.add('pulse');
@@ -251,7 +266,23 @@ let touchStartCenterY = 0;
 let touchStartTime = 0;
 let initialPinchDistance = 0;
 let lastZoomTime = 0;
+let multiTouchMode = 'none';
 
+const PINCH_START_THRESHOLD = 28;
+const SCROLL_START_THRESHOLD = 12;
+const ZOOM_STEP_DISTANCE = 42;
+const ZOOM_THROTTLE_MS = 220;
+
+function getTouchCenterY(touches) {
+    return (touches[0].clientY + touches[1].clientY) / 2;
+}
+
+function getPinchDistance(touches) {
+    return Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY
+    );
+}
 
 touchpad.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -268,9 +299,11 @@ touchpad.addEventListener('touchstart', (e) => {
     } else if (t.length === 2) {
         isMultiTouch = true;
         multiTouchMoved = false;
-        lastScrollY = (t[0].clientY + t[1].clientY) / 2;
+        multiTouchMode = 'pending';
+        lastScrollY = getTouchCenterY(t);
         touchStartCenterY = lastScrollY;
-        initialPinchDistance = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+        initialPinchDistance = getPinchDistance(t);
+        lastZoomTime = 0;
     }
 });
 
@@ -296,37 +329,43 @@ touchpad.addEventListener('touchmove', (e) => {
         lastX = t[0].clientX;
         lastY = t[0].clientY;
     } else if (t.length === 2) {
-        const currentPinchDistance = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-        
-        // Check if the fingers are pinching (distance changed significantly)
-        if (initialPinchDistance > 0 && Math.abs(currentPinchDistance - initialPinchDistance) > 35) {
-            const now = Date.now();
-            if (now - lastZoomTime > 180) { // Keep keypress rate low to prevent macOS lag
-                const ratio = currentPinchDistance / initialPinchDistance;
-                if (ratio > 1.12) {
-                    send('MSE:zoom:1'); // Zoom In (Cmd + =)
-                    initialPinchDistance = currentPinchDistance;
-                    lastZoomTime = now;
-                    multiTouchMoved = true;
-                } else if (ratio < 0.88) {
-                    send('MSE:zoom:-1'); // Zoom Out (Cmd + -)
-                    initialPinchDistance = currentPinchDistance;
-                    lastZoomTime = now;
-                    multiTouchMoved = true;
-                }
-            }
-        } else {
-            // Otherwise treat as standard 2-finger scroll
-            const currentScrollY = (t[0].clientY + t[1].clientY) / 2;
-            const dy = currentScrollY - lastScrollY;
-            if (Math.abs(currentScrollY - touchStartCenterY) > 8) {
+        const currentPinchDistance = getPinchDistance(t);
+        const currentScrollY = getTouchCenterY(t);
+        const pinchDelta = currentPinchDistance - initialPinchDistance;
+        const scrollDeltaFromStart = currentScrollY - touchStartCenterY;
+
+        if (multiTouchMode === 'pending') {
+            if (Math.abs(pinchDelta) > PINCH_START_THRESHOLD &&
+                Math.abs(pinchDelta) > Math.abs(scrollDeltaFromStart) * 1.2) {
+                multiTouchMode = 'zoom';
                 multiTouchMoved = true;
+            } else if (Math.abs(scrollDeltaFromStart) > SCROLL_START_THRESHOLD) {
+                multiTouchMode = 'scroll';
+                lastScrollY = currentScrollY;
+                multiTouchMoved = true;
+                return;
+            } else {
+                return;
             }
-            
+        }
+
+        if (multiTouchMode === 'zoom') {
+            const now = Date.now();
+            if (Math.abs(pinchDelta) >= ZOOM_STEP_DISTANCE && now - lastZoomTime >= ZOOM_THROTTLE_MS) {
+                send(`MSE:zoom:${pinchDelta > 0 ? 1 : -1}`, { pulse: false });
+                initialPinchDistance = currentPinchDistance;
+                lastZoomTime = now;
+            }
+            return;
+        }
+
+        if (multiTouchMode === 'scroll') {
+            const dy = currentScrollY - lastScrollY;
+
             // Scroll speed multiplier (reversed direction to match standard Apple Natural Scroll)
             const scrollSensitivity = 1.6;
             send(`MSE:scroll:${Math.round(-dy * scrollSensitivity)},0`);
-            
+
             lastScrollY = currentScrollY;
         }
     }
@@ -351,6 +390,12 @@ touchpad.addEventListener('touchend', (e) => {
             send('MSE:rclick');
             triggerHaptic(true);
         }
+    }
+
+    if (e.touches.length === 0) {
+        isMultiTouch = false;
+        multiTouchMode = 'none';
+        initialPinchDistance = 0;
     }
 });
 
