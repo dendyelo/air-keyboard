@@ -74,9 +74,17 @@ func postMouseScroll(dy: Int32, dx: Int32) {
 
 func postZoom(amount: Int32) {
     let source = CGEventSource(stateID: .hidSystemState)
-    let scrollEvent = CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: amount, wheel2: 0, wheel3: 0)
-    scrollEvent?.flags = .maskCommand
-    scrollEvent?.post(tap: .cghidEventTap)
+    // Keycode 24 is '=', keycode 27 is '-'
+    let keyCode: CGKeyCode = (amount > 0) ? 24 : 27
+    
+    let keyDownEvent = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true)
+    keyDownEvent?.flags = .maskCommand
+    
+    let keyUpEvent = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false)
+    keyUpEvent?.flags = .maskCommand
+    
+    keyDownEvent?.post(tap: .cghidEventTap)
+    keyUpEvent?.post(tap: .cghidEventTap)
 }
 
 func clamp(_ value: Double, min minValue: Double, max maxValue: Double) -> Double {
