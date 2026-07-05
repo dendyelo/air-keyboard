@@ -1,6 +1,125 @@
 import AppKit
 import Foundation
 
+// Custom Clickable Menu Item View that prevents menu dismissal on click
+class CopyableLinkView: NSView {
+    var title: String = ""
+    var isHighlighted: Bool = false
+    var originalTitle: String = ""
+    var trackingArea: NSTrackingArea?
+    var onCopy: (() -> Void)?
+    
+    init(title: String, frame: NSRect) {
+        super.init(frame: frame)
+        self.title = title
+        self.originalTitle = title
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea = trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect]
+        let area = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        addTrackingArea(area)
+        self.trackingArea = area
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        isHighlighted = true
+        needsDisplay = true
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        isHighlighted = false
+        needsDisplay = true
+    }
+    
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        
+        // 1. Draw highlight background if hovered
+        if isHighlighted {
+            if #available(macOS 10.14, *) {
+                NSColor.selectedContentBackgroundColor.set()
+            } else {
+                NSColor.alternateSelectedControlColor.set()
+            }
+            bounds.fill()
+        }
+        
+        // 2. Draw SF Symbol Icon ("link")
+        let iconName = "link"
+        if #available(macOS 11.0, *) {
+            let config = NSImage.SymbolConfiguration(scale: .medium)
+            if let img = NSImage(systemSymbolName: iconName, accessibilityDescription: nil)?.withSymbolConfiguration(config) {
+                img.isTemplate = true
+                if isHighlighted {
+                    NSColor.white.set()
+                } else {
+                    NSColor.secondaryLabelColor.set()
+                }
+                
+                // Draw icon centered vertically on the left
+                let iconSize = NSSize(width: 14, height: 14)
+                let iconRect = NSRect(x: 20, y: (bounds.height - iconSize.height) / 2, width: iconSize.width, height: iconSize.height)
+                img.draw(in: iconRect)
+            }
+        }
+        
+        // 3. Draw text label (monospaced)
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .left
+        
+        let isCopied = title.contains("Copied")
+        let font = NSFont.monospacedSystemFont(ofSize: 10, weight: isCopied ? .bold : .regular)
+        let textColor: NSColor
+        if isCopied {
+            textColor = NSColor.systemGreen
+        } else if isHighlighted {
+            textColor = NSColor.white
+        } else {
+            textColor = NSColor(red: 0.54, green: 0.7, blue: 0.98, alpha: 1.0) // #89b4fa
+        }
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraphStyle
+        ]
+        
+        let attrStr = NSAttributedString(string: title, attributes: attributes)
+        let textHeight: CGFloat = 14
+        let textRect = NSRect(x: 42, y: (bounds.height - textHeight) / 2, width: bounds.width - 50, height: textHeight)
+        attrStr.draw(in: textRect)
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        onCopy?()
+        
+        // Trigger visual copied flash
+        title = "Copied to clipboard!"
+        needsDisplay = true
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self = self else { return }
+            self.title = self.originalTitle
+            self.needsDisplay = true
+        }
+    }
+    
+    func updateTitle(_ newTitle: String) {
+        self.originalTitle = newTitle
+        self.title = newTitle
+        self.needsDisplay = true
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var menu: NSMenu!
@@ -42,7 +161,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(codeMenuItem)
         
         // Bonjour Link (Only visible when active)
-        hostLinkMenuItem = NSMenuItem(title: "", action: #selector(openHostURL), keyEquivalent: "")
+        hostLinkMenuItem = NSMenuItem(title: "", action: nil, keyEquivalent: "") // action is nil because click event is handled in custom view to prevent closing menu!
         setLink("")
         menu.addItem(hostLinkMenuItem)
         
@@ -110,13 +229,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if urlStr.isEmpty {
             hostLinkMenuItem.isHidden = true
         } else {
-            // Trim scheme for clean visual layout
             let cleanLink = urlStr.replacingOccurrences(of: "http://", with: "")
-            hostLinkMenuItem.attributedTitle = makeAttributed(cleanLink, color: NSColor(red: 0.54, green: 0.7, blue: 0.98, alpha: 1.0), size: 10) // #89b4fa
-            hostLinkMenuItem.isEnabled = true
+            
+            // Assign custom CopyableLinkView to the menu item so clicks do not close the menu
+            if let linkView = hostLinkMenuItem.view as? CopyableLinkView {
+                linkView.updateTitle(cleanLink)
+            } else {
+                let linkView = CopyableLinkView(title: cleanLink, frame: NSRect(x: 0, y: 0, width: 260, height: 22))
+                linkView.onCopy = {
+                    let fullURL = "http://\(cleanLink)"
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.declareTypes([.string], owner: nil)
+                    pasteboard.setString(fullURL, forType: .string)
+                }
+                hostLinkMenuItem.view = linkView
+            }
             hostLinkMenuItem.isHidden = false
         }
-        setMenuIcon(hostLinkMenuItem, name: "link")
     }
     
     func setDevices(_ devices: String) {
@@ -140,30 +269,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         serverErrorPipe?.fileHandleForReading.readabilityHandler = nil
         serverOutputPipe = nil
         serverErrorPipe = nil
-    }
-    
-    @objc func openHostURL() {
-        let title = hostLinkMenuItem.attributedTitle?.string ?? ""
-        if !title.isEmpty && !title.contains("offline") {
-            let fullURL = "http://\(title)"
-
-            // Copy URL to macOS pasteboard (clipboard)
-            let pasteboard = NSPasteboard.general
-            pasteboard.declareTypes([.string], owner: nil)
-            pasteboard.setString(fullURL, forType: .string)
-
-            // Give visual feedback in the menu
-            let originalTitle = hostLinkMenuItem.attributedTitle
-            hostLinkMenuItem.attributedTitle = makeAttributed("Copied to clipboard!", color: NSColor.systemGreen, size: 10, bold: true)
-
-            // Revert back to URL after 1.5 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-                guard let self = self else { return }
-                if self.serverProcess != nil {
-                    self.hostLinkMenuItem.attributedTitle = originalTitle
-                }
-            }
-        }
     }
     
     @objc func startServer() {
@@ -257,7 +362,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } catch {}
         } else {
-            // Failsafe: if process stopped but no error thrown
             if let proc = serverProcess, !proc.isRunning {
                 stopServer()
                 setErrorState()
