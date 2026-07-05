@@ -364,7 +364,7 @@ function forwardInputCommand(data) {
   if (command.startsWith('zoom:')) {
     const val = Number(command.slice(5));
     if (Number.isFinite(val) && val !== 0) {
-      writeHelperLine(`MSE:zoom:${Math.round(clamp(val, -3, 3))}`);
+      writeHelperLine(`MSE:zoom:${val > 0 ? 1 : -1}`);
       return true;
     }
     return false;

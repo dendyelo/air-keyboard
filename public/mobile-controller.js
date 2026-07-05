@@ -271,7 +271,7 @@ let pendingZoomSteps = 0;
 const PINCH_START_THRESHOLD = 28;
 const SCROLL_START_THRESHOLD = 12;
 const ZOOM_STEP_DISTANCE = 55;
-const MAX_ZOOM_STEPS_PER_GESTURE = 3;
+const MAX_ZOOM_STEPS_PER_GESTURE = 1;
 
 function getTouchCenterY(touches) {
     return (touches[0].clientY + touches[1].clientY) / 2;
