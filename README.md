@@ -50,7 +50,6 @@ If you prefer to compile and build the app bundle yourself:
    ```bash
    ./build-macos-app.sh
    ```
-   *(You can pass a custom PNG/JPG path to override the default icon: `./build-macos-app.sh /path/to/icon.png`)*
 3. Move the generated `AirKeyboard.app` into `/Applications`.
 
 ## macOS Accessibility Permission
