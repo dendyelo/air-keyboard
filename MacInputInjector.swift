@@ -66,9 +66,16 @@ func postMouseMove(dx: Double, dy: Double) {
     moveEvent?.post(tap: .cghidEventTap)
 }
 
-func postMouseScroll(dy: Int32) {
+func postMouseScroll(dy: Int32, dx: Int32) {
     let source = CGEventSource(stateID: .hidSystemState)
-    let scrollEvent = CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: 1, wheel1: dy, wheel2: 0, wheel3: 0)
+    let scrollEvent = CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: 2, wheel1: dy, wheel2: dx, wheel3: 0)
+    scrollEvent?.post(tap: .cghidEventTap)
+}
+
+func postZoom(amount: Int32) {
+    let source = CGEventSource(stateID: .hidSystemState)
+    let scrollEvent = CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: amount, wheel2: 0, wheel3: 0)
+    scrollEvent?.flags = .maskCommand
     scrollEvent?.post(tap: .cghidEventTap)
 }
 
@@ -139,9 +146,16 @@ func main() {
                     postMouseMove(dx: clamp(dx, min: -500, max: 500), dy: clamp(dy, min: -500, max: 500))
                 }
             } else if mcmd.hasPrefix("scroll:") {
-                let sval = String(mcmd.dropFirst(7))
-                if let dy = Int32(sval) {
-                    postMouseScroll(dy: dy)
+                let coords = String(mcmd.dropFirst(7)).split(separator: ",")
+                if coords.count == 2, let dy = Int32(coords[0]), let dx = Int32(coords[1]) {
+                    postMouseScroll(dy: dy, dx: dx)
+                } else if coords.count == 1, let dy = Int32(coords[0]) {
+                    postMouseScroll(dy: dy, dx: 0)
+                }
+            } else if mcmd.hasPrefix("zoom:") {
+                let sval = String(mcmd.dropFirst(5))
+                if let amount = Int32(sval) {
+                    postZoom(amount: amount)
                 }
             }
         }

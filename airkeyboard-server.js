@@ -343,11 +343,31 @@ function forwardInputCommand(data) {
   }
 
   if (command.startsWith('scroll:')) {
-    const dy = Number(command.slice(7));
-    if (!Number.isFinite(dy)) return false;
+    const parts = command.slice(7).split(',');
+    if (parts.length === 2) {
+      const dy = Number(parts[0]);
+      const dx = Number(parts[1]);
+      if (Number.isFinite(dy) && Number.isFinite(dx)) {
+        writeHelperLine(`MSE:scroll:${Math.round(clamp(dy, -MAX_SCROLL_DELTA, MAX_SCROLL_DELTA))},${Math.round(clamp(dx, -MAX_SCROLL_DELTA, MAX_SCROLL_DELTA))}`);
+        return true;
+      }
+    } else {
+      const dy = Number(parts[0]);
+      if (Number.isFinite(dy)) {
+        writeHelperLine(`MSE:scroll:${Math.round(clamp(dy, -MAX_SCROLL_DELTA, MAX_SCROLL_DELTA))}`);
+        return true;
+      }
+    }
+    return false;
+  }
 
-    writeHelperLine(`MSE:scroll:${Math.round(clamp(dy, -MAX_SCROLL_DELTA, MAX_SCROLL_DELTA))}`);
-    return true;
+  if (command.startsWith('zoom:')) {
+    const val = Number(command.slice(5));
+    if (Number.isFinite(val)) {
+      writeHelperLine(`MSE:zoom:${Math.round(clamp(val, -100, 100))}`);
+      return true;
+    }
+    return false;
   }
 
   return false;

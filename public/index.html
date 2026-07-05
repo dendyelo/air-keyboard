@@ -34,10 +34,24 @@
 
         <!-- Trackpad Section -->
         <div class="section-container">
-            <div id="touchpad" class="touchpad-area">
-                <div class="touchpad-hint">
-                    TRACKPAD ZONE<br>
-                    Slide to Move • Tap to Left Click • 2 Fingers to Scroll
+            <div class="trackpad-wrapper">
+                <div class="trackpad-main-row">
+                    <!-- Main Touchpad Area -->
+                    <div id="touchpad" class="touchpad-area">
+                        <div class="touchpad-hint">
+                            TRACKPAD ZONE<br>
+                            Move Pointer • 1-Tap Left Click<br>
+                            2-Finger Tap Right Click • 2-Finger Zoom/Scroll
+                        </div>
+                    </div>
+                    <!-- Vertical Scroll Bar (1-Finger Scroll) -->
+                    <div id="scrollBarY" class="scrollbar-y">
+                        <div class="scroll-icon-y">↕️</div>
+                    </div>
+                </div>
+                <!-- Horizontal Scroll Bar (1-Finger Scroll) -->
+                <div id="scrollBarX" class="scrollbar-x">
+                    <div class="scroll-icon-x">↔️</div>
                 </div>
             </div>
             

@@ -249,6 +249,7 @@ let touchStartX = 0;
 let touchStartY = 0;
 let touchStartCenterY = 0;
 let touchStartTime = 0;
+let initialPinchDistance = 0;
 
 touchpad.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -267,6 +268,7 @@ touchpad.addEventListener('touchstart', (e) => {
         multiTouchMoved = false;
         lastScrollY = (t[0].clientY + t[1].clientY) / 2;
         touchStartCenterY = lastScrollY;
+        initialPinchDistance = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
     }
 });
 
@@ -292,17 +294,34 @@ touchpad.addEventListener('touchmove', (e) => {
         lastX = t[0].clientX;
         lastY = t[0].clientY;
     } else if (t.length === 2) {
-        const currentScrollY = (t[0].clientY + t[1].clientY) / 2;
-        const dy = currentScrollY - lastScrollY;
-        if (Math.abs(currentScrollY - touchStartCenterY) > 8) {
-            multiTouchMoved = true;
+        const currentPinchDistance = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+        
+        // Check if the fingers are pinching (distance changed significantly)
+        if (initialPinchDistance > 0 && Math.abs(currentPinchDistance - initialPinchDistance) > 18) {
+            const ratio = currentPinchDistance / initialPinchDistance;
+            if (ratio > 1.08) {
+                send('MSE:zoom:1'); // Zoom In (Cmd + Scroll Up)
+                initialPinchDistance = currentPinchDistance;
+                multiTouchMoved = true;
+            } else if (ratio < 0.92) {
+                send('MSE:zoom:-1'); // Zoom Out (Cmd + Scroll Down)
+                initialPinchDistance = currentPinchDistance;
+                multiTouchMoved = true;
+            }
+        } else {
+            // Otherwise treat as standard 2-finger scroll
+            const currentScrollY = (t[0].clientY + t[1].clientY) / 2;
+            const dy = currentScrollY - lastScrollY;
+            if (Math.abs(currentScrollY - touchStartCenterY) > 8) {
+                multiTouchMoved = true;
+            }
+            
+            // Scroll speed multiplier (reversed direction to match standard Apple Natural Scroll)
+            const scrollSensitivity = 1.6;
+            send(`MSE:scroll:${Math.round(-dy * scrollSensitivity)},0`);
+            
+            lastScrollY = currentScrollY;
         }
-        
-        // Scroll speed multiplier (reversed direction to match standard Apple Natural Scroll)
-        const scrollSensitivity = 1.6;
-        send(`MSE:scroll:${Math.round(-dy * scrollSensitivity)}`);
-        
-        lastScrollY = currentScrollY;
     }
 });
 
@@ -349,6 +368,46 @@ rightClickBtn.addEventListener('mousedown', (e) => {
     if ('ontouchstart' in window) return;
     send('MSE:rclick');
     triggerHaptic(true);
+});
+
+// 1-Finger Scrollbars
+const scrollBarY = document.getElementById('scrollBarY');
+const scrollBarX = document.getElementById('scrollBarX');
+let lastScrollYTouch = 0;
+let lastScrollXTouch = 0;
+
+scrollBarY.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    lastScrollYTouch = e.touches[0].clientY;
+    triggerHaptic();
+});
+
+scrollBarY.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const currentY = e.touches[0].clientY;
+    const dy = currentY - lastScrollYTouch;
+    
+    const scrollSensitivity = 1.6;
+    send(`MSE:scroll:${Math.round(-dy * scrollSensitivity)},0`);
+    
+    lastScrollYTouch = currentY;
+});
+
+scrollBarX.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    lastScrollXTouch = e.touches[0].clientX;
+    triggerHaptic();
+});
+
+scrollBarX.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const currentX = e.touches[0].clientX;
+    const dx = currentX - lastScrollXTouch;
+    
+    const scrollSensitivity = 1.6;
+    send(`MSE:scroll:0,${Math.round(-dx * scrollSensitivity)}`);
+    
+    lastScrollXTouch = currentX;
 });
 
 // Start Connection
