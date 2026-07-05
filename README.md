@@ -68,7 +68,7 @@ macOS requires Accessibility permission to allow the Swift helper to inject glob
 </p>
 
 1. Click the keyboard icon in your macOS Menu Bar.
-2. Click the connection URL (e.g. `your-mac.local:3000`) to copy the link directly to your clipboard.
+2. Click the connection URL (e.g. `my-mac.local:3000`) to copy the link directly to your clipboard.
 3. Open Safari or Chrome on your mobile device (iPhone/iPad), paste the link, and enter the 4-digit **Code** displayed in the Menu Bar.
 4. Use your phone's screen as a trackpad and keyboard to control your Mac.
 5. To stop the server and close the app, simply click **Quit** in the Menu Bar dropdown.
