@@ -4,15 +4,42 @@ import Foundation
 // Custom Clickable Menu Item View that prevents menu dismissal on click
 class CopyableLinkView: NSView {
     var title: String = ""
-    var isHighlighted: Bool = false
+    var isHighlighted: Bool = false {
+        didSet {
+            updateColors()
+        }
+    }
     var originalTitle: String = ""
     var trackingArea: NSTrackingArea?
     var onCopy: (() -> Void)?
+    
+    // Subviews for clean OS rendering
+    var iconView: NSImageView!
+    var titleLabel: NSTextField!
     
     init(title: String, frame: NSRect) {
         super.init(frame: frame)
         self.title = title
         self.originalTitle = title
+        
+        // 1. Icon View (Uses contentTintColor for native tinting)
+        iconView = NSImageView(frame: NSRect(x: 20, y: (frame.height - 14) / 2, width: 14, height: 14))
+        iconView.imageScaling = .scaleProportionallyDown
+        if #available(macOS 11.0, *) {
+            let config = NSImage.SymbolConfiguration(scale: .medium)
+            iconView.image = NSImage(systemSymbolName: "link", accessibilityDescription: nil)?.withSymbolConfiguration(config)
+        } else {
+            iconView.image = NSImage(named: NSImage.shareTemplateName)
+        }
+        iconView.image?.isTemplate = true
+        addSubview(iconView)
+        
+        // 2. Title Label (monospaced text)
+        titleLabel = NSTextField(labelWithString: title)
+        titleLabel.frame = NSRect(x: 42, y: (frame.height - 16) / 2, width: frame.width - 50, height: 16)
+        addSubview(titleLabel)
+        
+        updateColors()
     }
     
     required init?(coder: NSCoder) {
@@ -32,18 +59,40 @@ class CopyableLinkView: NSView {
     
     override func mouseEntered(with event: NSEvent) {
         isHighlighted = true
-        needsDisplay = true
     }
     
     override func mouseExited(with event: NSEvent) {
         isHighlighted = false
+    }
+    
+    func updateColors() {
         needsDisplay = true
+        let isCopied = title.contains("Copied")
+        
+        // 1. Update Label Typography & Color
+        titleLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: isCopied ? .bold : .regular)
+        if isCopied {
+            titleLabel.textColor = NSColor.systemGreen
+        } else if isHighlighted {
+            titleLabel.textColor = NSColor.white
+        } else {
+            titleLabel.textColor = NSColor(red: 0.54, green: 0.7, blue: 0.98, alpha: 1.0) // #89b4fa
+        }
+        
+        // 2. Update Icon Tint Color
+        if #available(macOS 10.14, *) {
+            if isHighlighted {
+                iconView.contentTintColor = NSColor.white
+            } else {
+                iconView.contentTintColor = NSColor.secondaryLabelColor
+            }
+        }
     }
     
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         
-        // 1. Draw highlight background if hovered
+        // Draw highlight background if hovered
         if isHighlighted {
             if #available(macOS 10.14, *) {
                 NSColor.selectedContentBackgroundColor.set()
@@ -52,51 +101,6 @@ class CopyableLinkView: NSView {
             }
             bounds.fill()
         }
-        
-        // 2. Draw SF Symbol Icon ("link")
-        let iconName = "link"
-        if #available(macOS 11.0, *) {
-            let config = NSImage.SymbolConfiguration(scale: .medium)
-            if let img = NSImage(systemSymbolName: iconName, accessibilityDescription: nil)?.withSymbolConfiguration(config) {
-                img.isTemplate = true
-                if isHighlighted {
-                    NSColor.white.set()
-                } else {
-                    NSColor.secondaryLabelColor.set()
-                }
-                
-                // Draw icon centered vertically on the left
-                let iconSize = NSSize(width: 14, height: 14)
-                let iconRect = NSRect(x: 20, y: (bounds.height - iconSize.height) / 2, width: iconSize.width, height: iconSize.height)
-                img.draw(in: iconRect)
-            }
-        }
-        
-        // 3. Draw text label (monospaced)
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .left
-        
-        let isCopied = title.contains("Copied")
-        let font = NSFont.monospacedSystemFont(ofSize: 10, weight: isCopied ? .bold : .regular)
-        let textColor: NSColor
-        if isCopied {
-            textColor = NSColor.systemGreen
-        } else if isHighlighted {
-            textColor = NSColor.white
-        } else {
-            textColor = NSColor(red: 0.54, green: 0.7, blue: 0.98, alpha: 1.0) // #89b4fa
-        }
-        
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: textColor,
-            .paragraphStyle: paragraphStyle
-        ]
-        
-        let attrStr = NSAttributedString(string: title, attributes: attributes)
-        let textHeight: CGFloat = 14
-        let textRect = NSRect(x: 42, y: (bounds.height - textHeight) / 2, width: bounds.width - 50, height: textHeight)
-        attrStr.draw(in: textRect)
     }
     
     override func mouseDown(with event: NSEvent) {
@@ -104,19 +108,22 @@ class CopyableLinkView: NSView {
         
         // Trigger visual copied flash
         title = "Copied to clipboard!"
-        needsDisplay = true
+        titleLabel.stringValue = title
+        updateColors()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             guard let self = self else { return }
             self.title = self.originalTitle
-            self.needsDisplay = true
+            self.titleLabel.stringValue = self.title
+            self.updateColors()
         }
     }
     
     func updateTitle(_ newTitle: String) {
         self.originalTitle = newTitle
         self.title = newTitle
-        self.needsDisplay = true
+        self.titleLabel.stringValue = newTitle
+        self.updateColors()
     }
 }
 
