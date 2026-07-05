@@ -74,8 +74,7 @@ func postMouseScroll(dy: Int32, dx: Int32) {
 
 func postZoom(amount: Int32) {
     let source = CGEventSource(stateID: .hidSystemState)
-    let scrollAmount = amount * 8
-    let scrollEvent = CGEvent(scrollWheelEvent2Source: source, units: .pixel, wheelCount: 1, wheel1: scrollAmount, wheel2: 0, wheel3: 0)
+    let scrollEvent = CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: amount, wheel2: 0, wheel3: 0)
     scrollEvent?.flags = .maskCommand
     scrollEvent?.post(tap: .cghidEventTap)
 }
