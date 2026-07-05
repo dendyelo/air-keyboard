@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/app-icon.png" alt="AirKeyboard" width="120"/>
+</p>
+
 # AirKeyboard
 
 AirKeyboard turns an iPhone, iPad, Android device, or any other mobile browser into a local Wi-Fi keyboard and trackpad for macOS. The phone opens a web controller, the Mac runs a small Node.js/WebSocket server, and a native Swift helper injects keyboard and mouse events through macOS CoreGraphics.
