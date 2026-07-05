@@ -265,13 +265,13 @@ let touchStartY = 0;
 let touchStartCenterY = 0;
 let touchStartTime = 0;
 let initialPinchDistance = 0;
-let lastZoomTime = 0;
 let multiTouchMode = 'none';
+let pendingZoomSteps = 0;
 
 const PINCH_START_THRESHOLD = 28;
 const SCROLL_START_THRESHOLD = 12;
-const ZOOM_STEP_DISTANCE = 42;
-const ZOOM_THROTTLE_MS = 220;
+const ZOOM_STEP_DISTANCE = 55;
+const MAX_ZOOM_STEPS_PER_GESTURE = 3;
 
 function getTouchCenterY(touches) {
     return (touches[0].clientY + touches[1].clientY) / 2;
@@ -303,7 +303,7 @@ touchpad.addEventListener('touchstart', (e) => {
         lastScrollY = getTouchCenterY(t);
         touchStartCenterY = lastScrollY;
         initialPinchDistance = getPinchDistance(t);
-        lastZoomTime = 0;
+        pendingZoomSteps = 0;
     }
 });
 
@@ -350,11 +350,17 @@ touchpad.addEventListener('touchmove', (e) => {
         }
 
         if (multiTouchMode === 'zoom') {
-            const now = Date.now();
-            if (Math.abs(pinchDelta) >= ZOOM_STEP_DISTANCE && now - lastZoomTime >= ZOOM_THROTTLE_MS) {
-                send(`MSE:zoom:${pinchDelta > 0 ? 1 : -1}`, { pulse: false });
+            if (Math.abs(pinchDelta) >= ZOOM_STEP_DISTANCE) {
+                const direction = pinchDelta > 0 ? 1 : -1;
+                if (pendingZoomSteps === 0 || Math.sign(pendingZoomSteps) === direction) {
+                    pendingZoomSteps = Math.max(
+                        -MAX_ZOOM_STEPS_PER_GESTURE,
+                        Math.min(MAX_ZOOM_STEPS_PER_GESTURE, pendingZoomSteps + direction)
+                    );
+                } else {
+                    pendingZoomSteps = direction;
+                }
                 initialPinchDistance = currentPinchDistance;
-                lastZoomTime = now;
             }
             return;
         }
@@ -393,9 +399,13 @@ touchpad.addEventListener('touchend', (e) => {
     }
 
     if (e.touches.length === 0) {
+        if (multiTouchMode === 'zoom' && pendingZoomSteps !== 0) {
+            send(`MSE:zoom:${pendingZoomSteps}`, { pulse: false });
+        }
         isMultiTouch = false;
         multiTouchMode = 'none';
         initialPinchDistance = 0;
+        pendingZoomSteps = 0;
     }
 });
 
