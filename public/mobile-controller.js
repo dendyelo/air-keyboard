@@ -266,12 +266,14 @@ let touchStartCenterY = 0;
 let touchStartTime = 0;
 let initialPinchDistance = 0;
 let multiTouchMode = 'none';
-let pendingZoomSteps = 0;
+let zoomStepsThisGesture = 0;
+let lastZoomSendTime = 0;
 
 const PINCH_START_THRESHOLD = 28;
 const SCROLL_START_THRESHOLD = 12;
 const ZOOM_STEP_DISTANCE = 55;
-const MAX_ZOOM_STEPS_PER_GESTURE = 1;
+const ZOOM_STEP_INTERVAL_MS = 220;
+const MAX_ZOOM_STEPS_PER_GESTURE = 5;
 const SCROLL_SENSITIVITY = 1.6;
 const MOMENTUM_DECAY_PER_FRAME = 0.92;
 const MOMENTUM_MAX_DURATION_MS = 900;
@@ -382,6 +384,17 @@ function getPinchDistance(touches) {
     );
 }
 
+function trySendZoomStep(direction, now = performance.now()) {
+    if (direction !== 1 && direction !== -1) return false;
+    if (Math.abs(zoomStepsThisGesture) >= MAX_ZOOM_STEPS_PER_GESTURE) return false;
+    if (now - lastZoomSendTime < ZOOM_STEP_INTERVAL_MS) return false;
+
+    send(`MSE:zoom:${direction}`, { pulse: false });
+    zoomStepsThisGesture += direction;
+    lastZoomSendTime = now;
+    return true;
+}
+
 touchpad.addEventListener('touchstart', (e) => {
     e.preventDefault();
     stopAllScrollMomentum();
@@ -402,7 +415,8 @@ touchpad.addEventListener('touchstart', (e) => {
         lastScrollY = getTouchCenterY(t);
         touchStartCenterY = lastScrollY;
         initialPinchDistance = getPinchDistance(t);
-        pendingZoomSteps = 0;
+        zoomStepsThisGesture = 0;
+        lastZoomSendTime = 0;
         beginScrollGesture('y');
     }
 });
@@ -453,15 +467,9 @@ touchpad.addEventListener('touchmove', (e) => {
         if (multiTouchMode === 'zoom') {
             if (Math.abs(pinchDelta) >= ZOOM_STEP_DISTANCE) {
                 const direction = pinchDelta > 0 ? 1 : -1;
-                if (pendingZoomSteps === 0 || Math.sign(pendingZoomSteps) === direction) {
-                    pendingZoomSteps = Math.max(
-                        -MAX_ZOOM_STEPS_PER_GESTURE,
-                        Math.min(MAX_ZOOM_STEPS_PER_GESTURE, pendingZoomSteps + direction)
-                    );
-                } else {
-                    pendingZoomSteps = direction;
+                if (trySendZoomStep(direction)) {
+                    initialPinchDistance = currentPinchDistance;
                 }
-                initialPinchDistance = currentPinchDistance;
             }
             return;
         }
@@ -497,15 +505,14 @@ touchpad.addEventListener('touchend', (e) => {
     }
 
     if (e.touches.length === 0) {
-        if (multiTouchMode === 'zoom' && pendingZoomSteps !== 0) {
-            send(`MSE:zoom:${pendingZoomSteps}`, { pulse: false });
-        } else if (multiTouchMode === 'scroll') {
+        if (multiTouchMode === 'scroll') {
             startScrollMomentum('y');
         }
         isMultiTouch = false;
         multiTouchMode = 'none';
         initialPinchDistance = 0;
-        pendingZoomSteps = 0;
+        zoomStepsThisGesture = 0;
+        lastZoomSendTime = 0;
     }
 });
 
@@ -513,7 +520,8 @@ touchpad.addEventListener('touchcancel', () => {
     isMultiTouch = false;
     multiTouchMode = 'none';
     initialPinchDistance = 0;
-    pendingZoomSteps = 0;
+    zoomStepsThisGesture = 0;
+    lastZoomSendTime = 0;
     stopAllScrollMomentum();
 });
 
