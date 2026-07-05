@@ -573,7 +573,7 @@ function startListening() {
     const hostUrl = localHostname ? `http://${localHostname}:${currentPort}` : `http://${localIp}:${currentPort}`;
     console.log(`\n==========================================`);
     console.log(`AirKeyboard Server is running (HTTP)!`);
-    console.log(`Open browser on your iOS device and go to:`);
+    console.log(`Open browser on your mobile device and go to:`);
     console.log(`👉 http://${localIp}:${currentPort}`);
     if (localHostname) {
       console.log(`👉 ${hostUrl}`);
