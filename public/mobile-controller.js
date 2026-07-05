@@ -272,6 +272,104 @@ const PINCH_START_THRESHOLD = 28;
 const SCROLL_START_THRESHOLD = 12;
 const ZOOM_STEP_DISTANCE = 55;
 const MAX_ZOOM_STEPS_PER_GESTURE = 1;
+const SCROLL_SENSITIVITY = 1.6;
+const MOMENTUM_DECAY_PER_FRAME = 0.92;
+const MOMENTUM_MAX_DURATION_MS = 900;
+const MOMENTUM_MIN_VELOCITY = 0.035;
+const MOMENTUM_START_VELOCITY = 0.08;
+const MOMENTUM_MAX_VELOCITY = 2.4;
+
+const scrollMomentum = {
+    x: { frame: null, velocity: 0, remainder: 0, startedAt: 0, lastFrameTime: 0, lastMoveTime: 0 },
+    y: { frame: null, velocity: 0, remainder: 0, startedAt: 0, lastFrameTime: 0, lastMoveTime: 0 }
+};
+
+function clampValue(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+
+function stopScrollMomentum(axis, resetVelocity = true) {
+    const state = scrollMomentum[axis];
+    if (state.frame !== null) {
+        cancelAnimationFrame(state.frame);
+        state.frame = null;
+    }
+    if (resetVelocity) {
+        state.velocity = 0;
+        state.remainder = 0;
+    }
+}
+
+function stopAllScrollMomentum() {
+    stopScrollMomentum('x');
+    stopScrollMomentum('y');
+}
+
+function sendScrollAxis(axis, delta) {
+    const rounded = Math.round(delta);
+    if (rounded === 0) return;
+
+    if (axis === 'y') {
+        send(`MSE:scroll:${rounded},0`, { pulse: false });
+    } else {
+        send(`MSE:scroll:0,${rounded}`, { pulse: false });
+    }
+}
+
+function beginScrollGesture(axis, now = performance.now()) {
+    stopScrollMomentum(axis);
+    scrollMomentum[axis].lastMoveTime = now;
+}
+
+function applyScrollGestureDelta(axis, rawDelta, now = performance.now()) {
+    const state = scrollMomentum[axis];
+    const scrollDelta = -rawDelta * SCROLL_SENSITIVITY;
+    const dt = Math.max(8, now - (state.lastMoveTime || now));
+    const instantVelocity = clampValue(scrollDelta / dt, -MOMENTUM_MAX_VELOCITY, MOMENTUM_MAX_VELOCITY);
+
+    state.velocity = state.velocity * 0.55 + instantVelocity * 0.45;
+    state.lastMoveTime = now;
+    sendScrollAxis(axis, scrollDelta);
+}
+
+function startScrollMomentum(axis) {
+    const state = scrollMomentum[axis];
+    if (Math.abs(state.velocity) < MOMENTUM_START_VELOCITY) {
+        stopScrollMomentum(axis);
+        return;
+    }
+
+    stopScrollMomentum(axis, false);
+    state.velocity = clampValue(state.velocity, -MOMENTUM_MAX_VELOCITY, MOMENTUM_MAX_VELOCITY);
+    state.startedAt = performance.now();
+    state.lastFrameTime = state.startedAt;
+    state.remainder = 0;
+
+    const step = (timestamp) => {
+        const elapsed = timestamp - state.startedAt;
+        const dt = Math.min(32, Math.max(8, timestamp - state.lastFrameTime));
+        state.lastFrameTime = timestamp;
+
+        const decay = Math.pow(MOMENTUM_DECAY_PER_FRAME, dt / 16.7);
+        state.velocity *= decay;
+
+        const delta = state.velocity * dt + state.remainder;
+        const wholeDelta = delta > 0 ? Math.floor(delta) : Math.ceil(delta);
+        state.remainder = delta - wholeDelta;
+
+        if (wholeDelta !== 0) {
+            sendScrollAxis(axis, wholeDelta);
+        }
+
+        if (elapsed < MOMENTUM_MAX_DURATION_MS && Math.abs(state.velocity) >= MOMENTUM_MIN_VELOCITY) {
+            state.frame = requestAnimationFrame(step);
+        } else {
+            stopScrollMomentum(axis);
+        }
+    };
+
+    state.frame = requestAnimationFrame(step);
+}
 
 function getTouchCenterY(touches) {
     return (touches[0].clientY + touches[1].clientY) / 2;
@@ -286,6 +384,7 @@ function getPinchDistance(touches) {
 
 touchpad.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    stopAllScrollMomentum();
     const t = e.touches;
     touchStartTime = Date.now();
     
@@ -304,6 +403,7 @@ touchpad.addEventListener('touchstart', (e) => {
         touchStartCenterY = lastScrollY;
         initialPinchDistance = getPinchDistance(t);
         pendingZoomSteps = 0;
+        beginScrollGesture('y');
     }
 });
 
@@ -343,6 +443,7 @@ touchpad.addEventListener('touchmove', (e) => {
                 multiTouchMode = 'scroll';
                 lastScrollY = currentScrollY;
                 multiTouchMoved = true;
+                beginScrollGesture('y');
                 return;
             } else {
                 return;
@@ -367,10 +468,7 @@ touchpad.addEventListener('touchmove', (e) => {
 
         if (multiTouchMode === 'scroll') {
             const dy = currentScrollY - lastScrollY;
-
-            // Scroll speed multiplier (reversed direction to match standard Apple Natural Scroll)
-            const scrollSensitivity = 1.6;
-            send(`MSE:scroll:${Math.round(-dy * scrollSensitivity)},0`);
+            applyScrollGestureDelta('y', dy);
 
             lastScrollY = currentScrollY;
         }
@@ -401,12 +499,22 @@ touchpad.addEventListener('touchend', (e) => {
     if (e.touches.length === 0) {
         if (multiTouchMode === 'zoom' && pendingZoomSteps !== 0) {
             send(`MSE:zoom:${pendingZoomSteps}`, { pulse: false });
+        } else if (multiTouchMode === 'scroll') {
+            startScrollMomentum('y');
         }
         isMultiTouch = false;
         multiTouchMode = 'none';
         initialPinchDistance = 0;
         pendingZoomSteps = 0;
     }
+});
+
+touchpad.addEventListener('touchcancel', () => {
+    isMultiTouch = false;
+    multiTouchMode = 'none';
+    initialPinchDistance = 0;
+    pendingZoomSteps = 0;
+    stopAllScrollMomentum();
 });
 
 // Dedicated Click Buttons listeners
@@ -440,6 +548,7 @@ let lastScrollXTouch = 0;
 
 scrollBarY.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    beginScrollGesture('y');
     lastScrollYTouch = e.touches[0].clientY;
     triggerHaptic();
 });
@@ -448,15 +557,23 @@ scrollBarY.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const currentY = e.touches[0].clientY;
     const dy = currentY - lastScrollYTouch;
-    
-    const scrollSensitivity = 1.6;
-    send(`MSE:scroll:${Math.round(-dy * scrollSensitivity)},0`);
-    
+
+    applyScrollGestureDelta('y', dy);
     lastScrollYTouch = currentY;
+});
+
+scrollBarY.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    startScrollMomentum('y');
+});
+
+scrollBarY.addEventListener('touchcancel', () => {
+    stopScrollMomentum('y');
 });
 
 scrollBarX.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    beginScrollGesture('x');
     lastScrollXTouch = e.touches[0].clientX;
     triggerHaptic();
 });
@@ -465,11 +582,18 @@ scrollBarX.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const currentX = e.touches[0].clientX;
     const dx = currentX - lastScrollXTouch;
-    
-    const scrollSensitivity = 1.6;
-    send(`MSE:scroll:0,${Math.round(-dx * scrollSensitivity)}`);
-    
+
+    applyScrollGestureDelta('x', dx);
     lastScrollXTouch = currentX;
+});
+
+scrollBarX.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    startScrollMomentum('x');
+});
+
+scrollBarX.addEventListener('touchcancel', () => {
+    stopScrollMomentum('x');
 });
 
 // Start Connection
