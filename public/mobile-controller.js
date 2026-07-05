@@ -297,14 +297,14 @@ touchpad.addEventListener('touchmove', (e) => {
         const currentPinchDistance = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         
         // Check if the fingers are pinching (distance changed significantly)
-        if (initialPinchDistance > 0 && Math.abs(currentPinchDistance - initialPinchDistance) > 18) {
+        if (initialPinchDistance > 0 && Math.abs(currentPinchDistance - initialPinchDistance) > 10) {
             const ratio = currentPinchDistance / initialPinchDistance;
-            if (ratio > 1.08) {
-                send('MSE:zoom:1'); // Zoom In (Cmd + Scroll Up)
+            if (ratio > 1.05) {
+                send('MSE:zoom:1'); // Zoom In (Cmd + =)
                 initialPinchDistance = currentPinchDistance;
                 multiTouchMoved = true;
-            } else if (ratio < 0.92) {
-                send('MSE:zoom:-1'); // Zoom Out (Cmd + Scroll Down)
+            } else if (ratio < 0.95) {
+                send('MSE:zoom:-1'); // Zoom Out (Cmd + -)
                 initialPinchDistance = currentPinchDistance;
                 multiTouchMoved = true;
             }
