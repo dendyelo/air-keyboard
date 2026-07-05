@@ -134,10 +134,17 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 7. Apply deep ad-hoc codesign to the entire app bundle
-# This is critical for macOS to preserve Accessibility permissions across launches
-echo "Deep-signing the application bundle..."
-codesign --force --deep --sign - "$APP_NAME"
+# 7. Apply stable developer or ad-hoc codesign to the entire app bundle
+# Using a stable identity prevents macOS Accessibility permission resets on updates
+STABLE_IDENTITY=$(security find-identity -p codesigning -v | grep -E 'Apple Development|Developer ID Application' | head -n 1 | awk '{print $2}')
+
+if [ -n "$STABLE_IDENTITY" ]; then
+    echo "Stable developer identity detected: $STABLE_IDENTITY. Signing app bundle."
+    codesign --force --deep --sign "$STABLE_IDENTITY" "$APP_NAME"
+else
+    echo "No stable developer identity found. Falling back to ad-hoc signing (-)."
+    codesign --force --deep --sign - "$APP_NAME"
+fi
 
 chmod +x "$MACOS_DIR/AirKeyboard"
 chmod +x "$APP_SOURCE_DIR/start-airkeyboard.sh"
