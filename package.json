@@ -1,6 +1,6 @@
 {
   "name": "air-keyboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Use a mobile browser as a local Wi-Fi keyboard and trackpad for macOS.",
   "main": "airkeyboard-server.js",
   "scripts": {
