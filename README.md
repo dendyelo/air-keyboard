@@ -12,16 +12,12 @@ It is useful for headless Mac setups, quick remote input on the same network, or
 
 ## Features
 
-- Browser-based mobile controller, with no iOS app install required.
-- Local WebSocket input path for low-latency keyboard and pointer events.
-- macOS native input injection through a persistent Swift helper process.
-- Trackpad gestures: move pointer, single-finger tap, two-finger right click, and two-finger scroll.
-- Dedicated buttons for Esc, Tab, Delete, Space, Enter, and arrow keys.
-- Bonjour/local hostname support, plus IP fallback.
-- Session pairing with a 4-digit startup code and trusted-device tokens.
-- Trusted tokens are stored as hashes on the Mac and ignored by Git.
-- Minimal macOS menu bar app that shows the pairing code, copies the mobile URL, and lists active devices.
-- Auto port fallback when port `3000` is already in use.
+- **Zero App Install:** Connect instantly via any mobile web browser on the same Wi-Fi network (no App Store download required).
+- **Responsive Trackpad:** Supports smooth pointer movements, single-finger tap (left click), two-finger tap (right click), and natural two-finger scrolling.
+- **Virtual Keyboard:** Dedicated on-screen keys for `Esc`, `Tab`, `Delete`, `Space`, `Enter`, and Arrow keys.
+- **Minimal macOS Menu Bar App:** Runs headlessly in the background, showing your login PIN and a click-to-copy connection link.
+- **Smart Connection Security:** Generates a random 4-digit PIN for new sessions and securely saves trusted-device tokens.
+- **Automatic Port Allocation:** Dynamically finds and binds to a free network port if the default port `3000` is busy.
 
 ## Requirements
 
