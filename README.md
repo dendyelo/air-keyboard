@@ -51,19 +51,35 @@ Access Code for this session: 6590
 
 Open one of the URLs on your mobile device, enter the 4-digit code, then use the browser page as a keyboard and trackpad.
 
-## Menu Bar App
+## Installation & Setup
 
-AirKeyboard can also be packaged as a native macOS menu bar app. The menu bar app starts the server automatically, shows the current access code, copies the mobile URL when clicked, and stops the server when the app quits.
+You can either download the pre-compiled application directly or build it from source.
 
-Build the `.app` bundle with the bundled app icon:
+### Method 1: Direct Download (Easiest)
 
-```bash
-./build-macos-app.sh
-```
+1. Download the latest `AirKeyboard.zip` from the **Releases** page on GitHub and extract it.
+2. Drag `AirKeyboard.app` into your `/Applications` folder.
+3. Open Terminal and run this command to bypass the macOS Gatekeeper warning (required for unnotarized local developer apps):
+   ```bash
+   xattr -d com.apple.quarantine /Applications/AirKeyboard.app
+   ```
+4. Launch `AirKeyboard.app` from your Applications folder.
 
-You can still pass a custom PNG/JPG path to override `assets/app-icon.png`.
+### Method 2: Build from Source (Developers)
 
-Then move the generated `AirKeyboard.app` into `/Applications` if desired. Generated bundles, binaries, session files, and trusted token files are intentionally ignored by Git.
+If you prefer to compile and build the app bundle yourself:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/username/air-keyboard.git
+   cd air-keyboard
+   ```
+2. Build the app bundle with the default keycap icon:
+   ```bash
+   ./build-macos-app.sh
+   ```
+   *(You can pass a custom PNG/JPG path to override the default icon: `./build-macos-app.sh /path/to/icon.png`)*
+3. Move the generated `AirKeyboard.app` into `/Applications` and launch it.
 
 ## macOS Accessibility Permission
 

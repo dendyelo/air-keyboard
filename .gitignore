@@ -4,6 +4,7 @@ node_modules/
 # Compiled executables and bundles
 keyboard-helper
 AirKeyboard.app
+AirKeyboard.zip
 AppIcon.iconset/
 
 # OS generated files
