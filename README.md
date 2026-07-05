@@ -1,6 +1,6 @@
 # AirKeyboard
 
-AirKeyboard turns an iPhone, iPad, or other mobile browser into a local Wi-Fi keyboard and trackpad for macOS. The phone opens a web controller, the Mac runs a small Node.js/WebSocket server, and a native Swift helper injects keyboard and mouse events through macOS CoreGraphics.
+AirKeyboard turns an iPhone, iPad, Android device, or any other mobile browser into a local Wi-Fi keyboard and trackpad for macOS. The phone opens a web controller, the Mac runs a small Node.js/WebSocket server, and a native Swift helper injects keyboard and mouse events through macOS CoreGraphics.
 
 <p align="center">
   <img src="assets/mobile-controller-screenshot.png" alt="Mobile Web Controller" width="220"/>
@@ -10,7 +10,7 @@ It is useful for headless Mac setups, quick remote input on the same network, or
 
 ## Features
 
-- **Zero App Install:** Connect instantly via any mobile web browser on the same Wi-Fi network (no App Store download required).
+- **Zero App Install:** Connect instantly via any mobile web browser on iOS, iPadOS, or Android (no App Store / Google Play download required).
 - **Responsive Trackpad:** Supports smooth pointer movements, single-finger tap (left click), two-finger tap (right click), and natural two-finger scrolling.
 - **Virtual Keyboard:** Dedicated on-screen keys for `Esc`, `Tab`, `Delete`, `Space`, `Enter`, and Arrow keys.
 - **Minimal macOS Menu Bar App:** Runs headlessly in the background, showing your login PIN and a click-to-copy connection link.
@@ -22,7 +22,7 @@ It is useful for headless Mac setups, quick remote input on the same network, or
 - macOS 10.15 or later.
 - Node.js 16 or later.
 - Swift compiler (`swiftc`), usually installed with Xcode Command Line Tools.
-- A mobile device on the same trusted local network.
+- An iOS or Android mobile device on the same trusted local network.
 
 ## Installation & Setup
 
@@ -69,7 +69,7 @@ macOS requires Accessibility permission to allow the Swift helper to inject glob
 
 1. Click the keyboard icon in your macOS Menu Bar.
 2. Click the connection URL (e.g. `my-macOS.local:3000`) to copy the link directly to your clipboard.
-3. Open Safari or Chrome on your mobile device (iPhone/iPad), paste the link, and enter the 4-digit **Code** displayed in the Menu Bar.
+3. Open Safari, Chrome, or Firefox on your mobile device (iOS/Android), paste the link, and enter the 4-digit **Code** displayed in the Menu Bar.
 4. Use your phone's screen as a trackpad and keyboard to control your Mac.
 5. To stop the server and close the app, simply click **Quit** in the Menu Bar dropdown.
 
